@@ -1,0 +1,75 @@
+<div class="page-header">
+  <div>
+    <div class="page-title">Dashboard</div>
+    <div class="page-subtitle">Indicadores generales y accesos directos del sistema.</div>
+  </div>
+</div>
+
+<div *ngIf="cargando" class="empty-state">
+  Cargando indicadores...
+</div>
+
+<div *ngIf="!cargando">
+  <div class="grid-cards">
+    <div class="stat-card">
+      <div class="stat-label">Especialidades</div>
+      <div class="stat-value">{{ stats.especialidades }}</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Proveedores</div>
+      <div class="stat-value">{{ stats.proveedores }}</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Materiales</div>
+      <div class="stat-value">{{ stats.materiales }}</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Proyectos</div>
+      <div class="stat-value">{{ stats.proyectos }}</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Usuarios</div>
+      <div class="stat-value">{{ stats.usuarios }}</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Requerimientos</div>
+      <div class="stat-value">{{ stats.requerimientos }}</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Órdenes de compra</div>
+      <div class="stat-value">{{ stats.ordenes }}</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Compras</div>
+      <div class="stat-value">{{ stats.compras }}</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Kardex</div>
+      <div class="stat-value">{{ stats.kardex }}</div>
+    </div>
+  </div>
+
+  <section class="panel">
+    <div class="panel-title">Accesos directos</div>
+    <div class="toolbar">
+      <a class="btn btn-primary" routerLink="/requerimientos">Requerimientos</a>
+      <a class="btn btn-primary" routerLink="/ordenes-compra">Órdenes de compra</a>
+      <a class="btn btn-primary" routerLink="/compras">Compras</a>
+      <a class="btn btn-primary" routerLink="/kardex">Kardex</a>
+
+      <a class="btn btn-secondary" routerLink="/proveedores">Proveedores</a>
+      <a class="btn btn-secondary" routerLink="/materiales">Materiales</a>
+      <a class="btn btn-secondary" routerLink="/especialidades">Especialidades</a>
+      <a class="btn btn-secondary" routerLink="/proyectos">Proyectos</a>
+      <a class="btn btn-secondary" routerLink="/usuarios">Usuarios</a>
+    </div>
+  </section>
+</div>

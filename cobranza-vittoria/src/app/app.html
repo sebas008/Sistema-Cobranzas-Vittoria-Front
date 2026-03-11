@@ -1,0 +1,47 @@
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand__mark">V</div>
+      <div>
+        <div class="brand__title">Vittoria</div>
+        <div class="brand__subtitle">Sistema de control de gastos</div>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section__title">General</div>
+      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section__title">Mantenimiento</div>
+      <a routerLink="/especialidades" routerLinkActive="active">Especialidades</a>
+      <a routerLink="/proveedores" routerLinkActive="active">Proveedores</a>
+      <a routerLink="/materiales" routerLinkActive="active">Materiales</a>
+      <a routerLink="/proyectos" routerLinkActive="active">Proyectos</a>
+      <a routerLink="/usuarios" routerLinkActive="active">Usuarios</a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section__title">Operación</div>
+      <a routerLink="/requerimientos" routerLinkActive="active">Requerimientos</a>
+      <a routerLink="/ordenes-compra" routerLinkActive="active">Órdenes de compra</a>
+      <a routerLink="/compras" routerLinkActive="active">Compras</a>
+      <a routerLink="/kardex" routerLinkActive="active">Kardex</a>
+    </div>
+  </aside>
+
+  <section class="main-shell">
+    <header class="topbar">
+      <div>
+        <div class="topbar__title">Vittoria</div>
+        <div class="topbar__subtitle">Compras, almacén y control operativo</div>
+      </div>
+      <div class="topbar__pill">Proyecto listo para prueba</div>
+    </header>
+
+    <main class="page-container">
+      <router-outlet></router-outlet>
+    </main>
+  </section>
+</div>

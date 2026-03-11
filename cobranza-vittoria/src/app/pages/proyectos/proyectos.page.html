@@ -1,0 +1,80 @@
+<div class="page-header">
+  <div>
+    <div class="page-title">Proyectos</div>
+    <div class="page-subtitle">Listado y mantenimiento de proyectos disponibles en el sistema.</div>
+  </div>
+</div>
+
+<div class="page-grid-2">
+  <section class="panel">
+    <div class="panel-title">Listado</div>
+
+    <div *ngIf="!rows.length" class="empty-state">
+      No hay proyectos configurados.
+    </div>
+
+    <div *ngIf="rows.length" class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Proyecto</th>
+            <th>Descripción</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td>{{ row.nombreProyecto }}</td>
+            <td>{{ row.descripcion || '-' }}</td>
+            <td>
+              <span class="badge" [class.badge--ok]="row.activo" [class.badge--neutral]="!row.activo">
+                {{ row.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>
+              <button class="btn btn-secondary" (click)="edit(row)">Editar</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title">
+      {{ form.idProyecto ? 'Editar proyecto' : 'Nuevo proyecto' }}
+    </div>
+
+    <div class="form-grid two">
+      <div class="field">
+        <label>Nombre del proyecto</label>
+        <input [(ngModel)]="form.nombreProyecto" />
+      </div>
+
+      <div class="field">
+        <label>Estado</label>
+        <select [(ngModel)]="form.activo">
+          <option [ngValue]="true">Activo</option>
+          <option [ngValue]="false">Inactivo</option>
+        </select>
+      </div>
+
+      <div class="field" style="grid-column:1/-1;">
+        <label>Descripción</label>
+        <textarea [(ngModel)]="form.descripcion"></textarea>
+      </div>
+    </div>
+
+    <div class="toolbar" style="margin-top:14px;">
+      <button class="btn btn-primary" (click)="save()" [disabled]="saving">
+        {{ saving ? 'Guardando...' : 'Guardar proyecto' }}
+      </button>
+      <button class="btn btn-ghost" (click)="reset()">Limpiar</button>
+    </div>
+
+    <div *ngIf="msg" class="success-box">
+      {{ msg }}
+    </div>
+  </section>
+</div>
