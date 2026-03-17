@@ -16,11 +16,12 @@
     <div *ngIf="rqPendientesOc.length" class="table-wrap">
       <table>
         <thead>
-          <tr><th>RQ</th><th>Especialidad</th><th>Proyecto</th><th>Solicitante</th><th>Estado</th><th></th></tr>
+          <tr><th>RQ</th><th>Fecha</th><th>Especialidad</th><th>Proyecto</th><th>Solicitante</th><th>Estado</th><th></th></tr>
         </thead>
         <tbody>
           <tr *ngFor="let row of rqPendientesOc">
             <td>{{ row.numeroRequerimiento }}</td>
+            <td>{{ row.fechaRequerimiento | date:'yyyy-MM-dd' }}</td>
             <td>{{ row.especialidad }}</td>
             <td>{{ row.nombreProyecto }}</td>
             <td>{{ row.solicitante }}</td>
@@ -41,16 +42,16 @@
       <div *ngIf="ordenesCreadas.length" class="table-wrap">
         <table>
           <thead>
-            <tr><th>N° OC</th><th>RQ</th><th>Proveedor</th><th>Proyecto</th><th>Estado</th><th>Total</th><th></th></tr>
+            <tr><th>N° OC</th><th>Fecha</th><th>RQ</th><th>Proveedor</th><th>Proyecto</th><th>Estado</th><th></th></tr>
           </thead>
           <tbody>
             <tr *ngFor="let row of ordenesCreadas">
               <td>{{ row.numeroOrdenCompra }}</td>
+              <td>{{ row.fechaOrdenCompra | date:'yyyy-MM-dd' }}</td>
               <td>{{ row.numeroRequerimiento || '-' }}</td>
               <td>{{ row.proveedor || '-' }}</td>
               <td>{{ row.nombreProyecto || '-' }}</td>
               <td><span class="badge badge--pending">{{ row.estado }}</span></td>
-              <td>{{ row.total }}</td>
               <td><button class="btn btn-secondary" (click)="verOc(row)">Ver</button></td>
             </tr>
           </tbody>
@@ -86,13 +87,12 @@
         <div class="panel-title" style="font-size:1rem;">Detalle jalado del requerimiento</div>
         <div class="table-wrap" *ngIf="form.items.length">
           <table>
-            <thead><tr><th>Material</th><th>Unidad</th><th>Cantidad</th><th>Precio unitario</th></tr></thead>
+            <thead><tr><th>Material</th><th>Unidad</th><th>Cantidad</th></tr></thead>
             <tbody>
               <tr *ngFor="let x of form.items">
                 <td>{{ x.material }}</td>
                 <td>{{ x.unidadMedida }}</td>
                 <td>{{ x.cantidad }}</td>
-                <td><input type="number" [(ngModel)]="x.precioUnitario"></td>
               </tr>
             </tbody>
           </table>
@@ -114,14 +114,12 @@
 
       <div class="table-wrap" *ngIf="detalleOc.items?.length">
         <table>
-          <thead><tr><th>Material</th><th>Unidad</th><th>Cantidad</th><th>PU</th><th>Subtotal</th></tr></thead>
+          <thead><tr><th>Material</th><th>Unidad</th><th>Cantidad</th></tr></thead>
           <tbody>
             <tr *ngFor="let item of detalleOc.items">
               <td>{{ item.material }}</td>
               <td>{{ item.unidadMedida }}</td>
               <td>{{ item.cantidad }}</td>
-              <td>{{ item.precioUnitario }}</td>
-              <td>{{ item.subtotal }}</td>
             </tr>
           </tbody>
         </table>

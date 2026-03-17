@@ -81,8 +81,8 @@
         <label>Unidad de medida</label>
         <select [(ngModel)]="form.unidadMedida">
           <option value="">Seleccionar</option>
-          <option *ngFor="let u of unidadesMedida" [value]="u.nombre">
-            {{ u.nombre }}
+          <option *ngFor="let u of unidadesMedida" [value]="u.codigo || u.nombre">
+            {{ (u.codigo || u.nombre) + ' - ' + u.nombre }}
           </option>
         </select>
       </div>

@@ -1,7 +1,7 @@
 <div class="page-header">
   <div>
     <div class="page-title">Kardex</div>
-    <div class="page-subtitle">Una sola tabla de almacén separada por especialidad.</div>
+    <div class="page-subtitle">Kardex alimentado desde compras, separado por especialidad.</div>
   </div>
 </div>
 
@@ -47,7 +47,7 @@
 </section>
 
 <section class="panel" style="margin-top: 18px;">
-  <div class="panel-title">Kardex por especialidad</div>
+  <div class="panel-title">Kardex desde compras</div>
 
   <div *ngIf="!rows.length" class="empty-state">
     No hay movimientos para mostrar.
@@ -60,12 +60,10 @@
           <th>Especialidad</th>
           <th>Fecha</th>
           <th>Material</th>
-          <th>Tipo</th>
-          <th>Documento</th>
           <th>Entrada</th>
           <th>Salida</th>
           <th>Stock</th>
-          <th>Observación</th>
+          <th>Observaciones</th>
         </tr>
       </thead>
       <tbody>
@@ -75,10 +73,8 @@
               {{ row.especialidad || row.Especialidad || '-' }}
             </strong>
           </td>
-          <td>{{ row.fechaMovimiento || row.FechaMovimiento || '-' }}</td>
+          <td>{{ row.fechaMovimiento || row.FechaMovimiento ? ((row.fechaMovimiento || row.FechaMovimiento) | date:'dd/MM/yyyy') : '-' }}</td>
           <td>{{ row.material || row.Material || '-' }}</td>
-          <td>{{ row.tipoMovimiento || row.TipoMovimiento || '-' }}</td>
-          <td>{{ row.documentoReferencia || row.DocumentoReferencia || '-' }}</td>
           <td>{{ row.cantidadEntrada || row.CantidadEntrada || row.entrada || row.Entrada || 0 }}</td>
           <td>{{ row.cantidadSalida || row.CantidadSalida || row.salida || row.Salida || 0 }}</td>
           <td>{{ row.stockResultante || row.StockResultante || row.stock || row.Stock || 0 }}</td>

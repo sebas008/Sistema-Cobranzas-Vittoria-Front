@@ -48,12 +48,19 @@ export class ComprasPage implements OnInit {
     const idOrdenCompra = row.idOrdenCompra || row.IdOrdenCompra;
     this.compras.orden(idOrdenCompra).subscribe({
       next: (x: any) => {
-        this.detalleOc = x;
         this.detalleCompra = null;
 
         const oc = x?.ordenCompra;
-        const items = x?.items || [];
-        const total = items.reduce((acc: number, it: any) => acc + Number(it.subtotal || 0), 0);
+        const items = (x?.items || []).map((it: any) => ({
+          ...it,
+          precioUnitario: Number(it.precioUnitario || it.PrecioUnitario || 0)
+        }));
+        this.detalleOc = { ...x, items };
+        const total = items.reduce((acc: number, it: any) => {
+          const cantidad = Number(it.cantidad || it.Cantidad || 0);
+          const pu = Number(it.precioUnitario || it.PrecioUnitario || 0);
+          return acc + (cantidad * pu);
+        }, 0);
 
         this.form = {
           numeroCompra: '',
@@ -102,8 +109,13 @@ export class ComprasPage implements OnInit {
       idOrdenCompra: Number(this.form.idOrdenCompra),
       idProveedor: Number(this.form.idProveedor),
       fechaCompra: this.form.fechaCompra,
-      montoTotal: Number(this.form.montoTotal || 0),
-      observacion: this.form.observacion || ''
+      montoTotal: this.montoTotalCalculado,
+      observacion: this.form.observacion || '',
+      items: (this.detalleOc?.items || []).map((item: any) => ({
+        idMaterial: Number(item.idMaterial || item.IdMaterial || 0),
+        cantidad: Number(item.cantidad || item.Cantidad || 0),
+        precioUnitario: Number(item.precioUnitario || item.PrecioUnitario || 0)
+      }))
     };
 
     if (!dto.idOrdenCompra) { this.msg = 'Debes seleccionar una OC pendiente.'; return; }
@@ -136,6 +148,15 @@ export class ComprasPage implements OnInit {
       },
       error: (e: any) => this.msg = e?.error?.message || 'No se pudo registrar la compra.'
     });
+  }
+
+  get montoTotalCalculado(): number {
+    const items = this.detalleOc?.items || [];
+    return items.reduce((acc: number, item: any) => {
+      const cantidad = Number(item.cantidad || item.Cantidad || 0);
+      const pu = Number(item.precioUnitario || item.PrecioUnitario || 0);
+      return acc + (cantidad * pu);
+    }, 0);
   }
 
   resetForm() {

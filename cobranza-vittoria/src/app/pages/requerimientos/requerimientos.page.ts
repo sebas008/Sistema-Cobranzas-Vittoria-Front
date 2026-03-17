@@ -20,15 +20,28 @@ export class RequerimientosPage implements OnInit {
   usuarios: any[] = [];
   detalle: any = null;
 
+  filtros: any = {
+    estado: '',
+    idEspecialidad: null,
+    idProyecto: null
+  };
+
   editando = false;
   puedeEditarDetalle = false;
   puedeEnviarOC = false;
   requerimientoEditandoId: number | null = null;
 
+  modalEspecialidades = false;
+  modalItem = {
+    idEspecialidad: null as number | null,
+    idMaterial: null as number | null,
+    cantidad: 1,
+    observacion: ''
+  };
+
   form: any = {
     numeroRequerimiento: '',
     fechaRequerimiento: '',
-    idEspecialidad: null,
     idProyecto: null,
     descripcion: '',
     fechaEntrega: '',
@@ -37,14 +50,20 @@ export class RequerimientosPage implements OnInit {
     items: []
   };
 
-  item = {
-    idMaterial: null as number | null,
-    cantidad: 1,
-    observacion: ''
-  };
-
   msg = '';
   saving = false;
+
+  get especialidadesSeleccionadas(): string[] {
+    const values = (this.form.items || [])
+      .map((x: any) => (x.especialidad || '').trim())
+      .filter((x: string) => !!x);
+    return Array.from(new Set(values));
+  }
+
+  get materialesFiltradosModal(): any[] {
+    if (!this.modalItem.idEspecialidad) return [];
+    return (this.materiales || []).filter((m: any) => Number(m.idEspecialidad) === Number(this.modalItem.idEspecialidad));
+  }
 
   constructor(
     private compras: ComprasService,
@@ -58,7 +77,7 @@ export class RequerimientosPage implements OnInit {
   }
 
   load(): void {
-    this.compras.requerimientos().subscribe({
+    this.compras.requerimientos(this.filtros).subscribe({
       next: (x: any) => this.rows = x ?? [],
       error: () => this.rows = []
     });
@@ -71,29 +90,62 @@ export class RequerimientosPage implements OnInit {
     this.seguridad.usuarios().subscribe({ next: (x: any) => this.usuarios = x ?? [], error: () => this.usuarios = [] });
   }
 
-  addItem(): void {
+  abrirModalEspecialidades(): void {
+    this.msg = '';
+    this.modalEspecialidades = true;
+    this.modalItem = {
+      idEspecialidad: null,
+      idMaterial: null,
+      cantidad: 1,
+      observacion: ''
+    };
+  }
+
+  cerrarModalEspecialidades(): void {
+    this.modalEspecialidades = false;
+    this.modalItem = {
+      idEspecialidad: null,
+      idMaterial: null,
+      cantidad: 1,
+      observacion: ''
+    };
+  }
+
+  onModalEspecialidadChange(): void {
+    this.modalItem.idMaterial = null;
+  }
+
+  agregarItemDesdeModal(): void {
     this.msg = '';
 
-    if (!this.item.idMaterial) {
+    if (!this.modalItem.idEspecialidad) {
+      this.msg = 'Debes seleccionar una especialidad.';
+      return;
+    }
+
+    if (!this.modalItem.idMaterial) {
       this.msg = 'Debes seleccionar un material.';
       return;
     }
 
-    if (!this.item.cantidad || Number(this.item.cantidad) <= 0) {
+    if (!this.modalItem.cantidad || Number(this.modalItem.cantidad) <= 0) {
       this.msg = 'La cantidad debe ser mayor a 0.';
       return;
     }
 
-    const material = this.materiales.find((m: any) => m.idMaterial === Number(this.item.idMaterial));
+    const material = this.materiales.find((m: any) => m.idMaterial === Number(this.modalItem.idMaterial));
+    const especialidad = this.especialidades.find((e: any) => e.idEspecialidad === Number(this.modalItem.idEspecialidad));
 
     this.form.items.push({
-      idMaterial: Number(this.item.idMaterial),
+      idMaterial: Number(this.modalItem.idMaterial),
+      idEspecialidad: Number(this.modalItem.idEspecialidad),
+      especialidad: material?.especialidad ?? especialidad?.nombre ?? '',
       material: material?.descripcion ?? '',
-      cantidad: Number(this.item.cantidad),
-      observacion: this.item.observacion ?? ''
+      cantidad: Number(this.modalItem.cantidad),
+      observacion: this.modalItem.observacion ?? ''
     });
 
-    this.item = { idMaterial: null, cantidad: 1, observacion: '' };
+    this.cerrarModalEspecialidades();
   }
 
   removeItem(index: number): void {
@@ -132,7 +184,6 @@ export class RequerimientosPage implements OnInit {
     this.form = {
       numeroRequerimiento: req.numeroRequerimiento ?? '',
       fechaRequerimiento: this.toDateInput(req.fechaRequerimiento),
-      idEspecialidad: req.idEspecialidad ?? null,
       idProyecto: req.idProyecto ?? null,
       descripcion: req.descripcion ?? '',
       fechaEntrega: this.toDateInput(req.fechaEntrega),
@@ -140,6 +191,8 @@ export class RequerimientosPage implements OnInit {
       observacion: req.observacion ?? '',
       items: items.map((x: any) => ({
         idMaterial: x.idMaterial,
+        idEspecialidad: x.idEspecialidad ?? null,
+        especialidad: x.especialidad ?? '',
         material: x.material,
         cantidad: Number(x.cantidad),
         observacion: x.observacion ?? ''
@@ -179,10 +232,6 @@ export class RequerimientosPage implements OnInit {
       this.msg = 'Debes ingresar la fecha del requerimiento.';
       return;
     }
-    if (!this.form.idEspecialidad) {
-      this.msg = 'Debes seleccionar una especialidad.';
-      return;
-    }
     if (!this.form.idProyecto) {
       this.msg = 'Debes seleccionar un proyecto.';
       return;
@@ -196,10 +245,16 @@ export class RequerimientosPage implements OnInit {
       return;
     }
 
+    const idEspecialidadBase = this.form.items[0]?.idEspecialidad;
+    if (!idEspecialidadBase) {
+      this.msg = 'No se pudo determinar la especialidad base del requerimiento.';
+      return;
+    }
+
     const dto = {
       numeroRequerimiento: this.form.numeroRequerimiento.trim(),
       fechaRequerimiento: this.form.fechaRequerimiento,
-      idEspecialidad: Number(this.form.idEspecialidad),
+      idEspecialidad: Number(idEspecialidadBase),
       idProyecto: Number(this.form.idProyecto),
       descripcion: this.form.descripcion ?? '',
       fechaEntrega: this.form.fechaEntrega || null,
@@ -247,11 +302,11 @@ export class RequerimientosPage implements OnInit {
     this.requerimientoEditandoId = null;
     this.puedeEditarDetalle = false;
     this.puedeEnviarOC = false;
+    this.modalEspecialidades = false;
 
     this.form = {
       numeroRequerimiento: '',
       fechaRequerimiento: '',
-      idEspecialidad: null,
       idProyecto: null,
       descripcion: '',
       fechaEntrega: '',
@@ -260,7 +315,8 @@ export class RequerimientosPage implements OnInit {
       items: []
     };
 
-    this.item = {
+    this.modalItem = {
+      idEspecialidad: null,
       idMaterial: null,
       cantidad: 1,
       observacion: ''

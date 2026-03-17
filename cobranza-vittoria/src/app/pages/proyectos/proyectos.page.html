@@ -19,6 +19,7 @@
           <tr>
             <th>Proyecto</th>
             <th>Descripción</th>
+            <th>Fecha</th>
             <th>Estado</th>
             <th></th>
           </tr>
@@ -27,6 +28,7 @@
           <tr *ngFor="let row of rows">
             <td>{{ row.nombreProyecto }}</td>
             <td>{{ row.descripcion || '-' }}</td>
+            <td>{{ row.fechaCreacion | date:'yyyy-MM-dd' }}</td>
             <td>
               <span class="badge" [class.badge--ok]="row.activo" [class.badge--neutral]="!row.activo">
                 {{ row.activo ? 'Activo' : 'Inactivo' }}
