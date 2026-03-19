@@ -1,0 +1,309 @@
+<div class="page-header">
+  <div>
+    <div class="page-title">Valorizaciones</div>
+    <div class="page-subtitle">Módulo basado en el Excel: especialidad, proveedor, cotización, detalle de facturas y resumen de pago.</div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-secondary" (click)="aplicarFiltros()">Actualizar</button>
+    <button class="btn btn-primary" (click)="nuevaValorizacion()">Nueva valorización</button>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-title">Filtros</div>
+  <div class="filters">
+    <div class="field">
+      <label>Proyecto</label>
+      <select [(ngModel)]="filtros.idProyecto">
+        <option [ngValue]="null">Todos</option>
+        <option *ngFor="let p of proyectos" [ngValue]="p.idProyecto">{{ p.nombreProyecto }}</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Proveedor</label>
+      <select [(ngModel)]="filtros.idProveedor">
+        <option [ngValue]="null">Todos</option>
+        <option *ngFor="let p of proveedores" [ngValue]="p.idProveedor">{{ p.razonSocial }}</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Especialidad</label>
+      <select [(ngModel)]="filtros.idEspecialidad">
+        <option [ngValue]="null">Todas</option>
+        <option *ngFor="let e of especialidades" [ngValue]="e.idEspecialidad">{{ e.nombre }}</option>
+      </select>
+    </div>
+    <div class="field" style="align-self:end;">
+      <button class="btn btn-primary" (click)="aplicarFiltros()">Buscar</button>
+    </div>
+  </div>
+</div>
+
+<div class="split valuation-split">
+  <section class="panel">
+    <div class="panel-title">Configuración proveedor + especialidad + cotización</div>
+    <div class="form-grid two">
+      <div class="field">
+        <label>Proyecto</label>
+        <select [(ngModel)]="formConfiguracion.idProyecto">
+          <option [ngValue]="null">Seleccione</option>
+          <option *ngFor="let p of proyectos" [ngValue]="p.idProyecto">{{ p.nombreProyecto }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Proveedor</label>
+        <select [(ngModel)]="formConfiguracion.idProveedor">
+          <option [ngValue]="null">Seleccione</option>
+          <option *ngFor="let p of proveedores" [ngValue]="p.idProveedor">{{ p.razonSocial }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Especialidad</label>
+        <select [(ngModel)]="formConfiguracion.idEspecialidad">
+          <option [ngValue]="null">Seleccione</option>
+          <option *ngFor="let e of especialidades" [ngValue]="e.idEspecialidad">{{ e.nombre }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Moneda</label>
+        <select [(ngModel)]="formConfiguracion.moneda">
+          <option value="PEN">Soles</option>
+          <option value="USD">Dólares</option>
+        </select>
+      </div>
+      <div class="field" style="grid-column:1/-1;">
+        <label>Servicio</label>
+        <input [(ngModel)]="formConfiguracion.servicio" />
+      </div>
+      <div class="field">
+        <label>Cotización</label>
+        <input type="number" [(ngModel)]="formConfiguracion.montoCotizacion" />
+      </div>
+    </div>
+    <div class="toolbar" style="margin-top:14px;">
+      <button class="btn btn-primary" (click)="guardarConfiguracion()" [disabled]="!formConfiguracion.idProyecto || !formConfiguracion.idProveedor || !formConfiguracion.idEspecialidad || !formConfiguracion.montoCotizacion">Guardar configuración</button>
+    </div>
+
+    <div class="table-wrap" *ngIf="configuraciones.length">
+      <table>
+        <thead>
+          <tr>
+            <th>Proyecto</th>
+            <th>Proveedor</th>
+            <th>Especialidad</th>
+            <th>Servicio</th>
+            <th>Moneda</th>
+            <th>Cotización</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of configuraciones">
+            <td>{{ row.proyecto || row.nombreProyecto || '-' }}</td>
+            <td>{{ row.proveedor || row.razonSocial || '-' }}</td>
+            <td>{{ row.especialidad || row.nombreEspecialidad || '-' }}</td>
+            <td>{{ row.servicio || '-' }}</td>
+            <td>{{ row.moneda || '-' }}</td>
+            <td>{{ formatMoney(row.montoCotizacion) }}</td>
+            <td class="actions">
+              <button class="btn btn-secondary" (click)="editarConfiguracion(row)">Editar</button>
+              <button class="btn btn-primary" (click)="crearDesdeConfiguracion(row)">Usar</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div *ngIf="!configuraciones.length" class="empty-state">No hay configuraciones registradas.</div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title">Cabecera de valorización</div>
+    <div class="form-grid two">
+      <div class="field">
+        <label>Configuración</label>
+        <select [(ngModel)]="formValorizacion.idConfiguracion">
+          <option [ngValue]="null">Seleccione</option>
+          <option *ngFor="let c of configuraciones" [ngValue]="c.idConfiguracion">
+            {{ (c.especialidad || c.nombreEspecialidad || '-') + ' - ' + (c.razonSocial || c.proveedor || '-') }}
+          </option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Periodo</label>
+        <input [(ngModel)]="formValorizacion.periodo" placeholder="Ej. 2026-03" />
+      </div>
+      <div class="field" style="grid-column:1/-1;">
+        <label>Observación</label>
+        <textarea [(ngModel)]="formValorizacion.observacion"></textarea>
+      </div>
+    </div>
+    <div class="toolbar" style="margin-top:14px;">
+      <button class="btn btn-primary" (click)="guardarValorizacion()" [disabled]="!formValorizacion.idConfiguracion || !formValorizacion.periodo">Guardar valorización</button>
+    </div>
+
+    <div class="table-wrap" *ngIf="rows.length">
+      <table>
+        <thead>
+          <tr>
+            <th>Periodo</th>
+            <th>Proyecto</th>
+            <th>Proveedor</th>
+            <th>Especialidad</th>
+            <th>Cotización</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows">
+            <td>{{ row.periodo }}</td>
+            <td>{{ row.proyecto || row.nombreProyecto || '-' }}</td>
+            <td>{{ row.proveedor || row.razonSocial || '-' }}</td>
+            <td>{{ row.especialidad || row.nombreEspecialidad || '-' }}</td>
+            <td>{{ formatMoney(row.montoCotizacion) }}</td>
+            <td><button class="btn btn-secondary" (click)="ver(row.idValorizacion)">Ver</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div *ngIf="!rows.length" class="empty-state">No hay valorizaciones registradas.</div>
+  </section>
+</div>
+
+<div class="kpi-strip" *ngIf="resumen">
+  <div class="stat-card"><div class="stat-label">Cotización</div><div class="stat-value">{{ formatMoney(resumen.cotizacion || resumen.montoCotizacion) }}</div></div>
+  <div class="stat-card"><div class="stat-label">Facturado</div><div class="stat-value">{{ formatMoney(resumen.facturado) }}</div></div>
+  <div class="stat-card"><div class="stat-label">Transferido</div><div class="stat-value">{{ formatMoney(resumen.transferido) }}</div></div>
+  <div class="stat-card"><div class="stat-label">Resta / Liquidar</div><div class="stat-value small">{{ formatMoney(resumen.resta) }} / {{ formatMoney(resumen.liquidar) }}</div></div>
+</div>
+
+<div class="split valuation-split-bottom">
+  <section class="panel">
+    <div class="panel-title">Detalle de factura y pago</div>
+    <div class="form-grid">
+      <div class="field">
+        <label>F. Fact.</label>
+        <input type="date" [(ngModel)]="formDetalle.fechaFactura" />
+      </div>
+      <div class="field">
+        <label>N° Factura</label>
+        <input [(ngModel)]="formDetalle.numeroFactura" />
+      </div>
+      <div class="field">
+        <label>Mto. Factura</label>
+        <input type="number" [(ngModel)]="formDetalle.montoFactura" />
+      </div>
+      <div class="field">
+        <label>Otros descuentos</label>
+        <input type="number" [(ngModel)]="formDetalle.otrosDescuentos" />
+      </div>
+      <div class="field" style="grid-column:1/-1;">
+        <label>Descripción</label>
+        <textarea [(ngModel)]="formDetalle.descripcion"></textarea>
+      </div>
+      <div class="field">
+        <label>F. Transferencia</label>
+        <input type="date" [(ngModel)]="formDetalle.fechaTransferencia" />
+      </div>
+      <div class="field">
+        <label>N° Operación</label>
+        <input [(ngModel)]="formDetalle.numeroOperacion" />
+      </div>
+      <div class="field">
+        <label>Banco TF</label>
+        <input [(ngModel)]="formDetalle.bancoTransferencia" />
+      </div>
+      <div class="field">
+        <label>Banco destino</label>
+        <input [(ngModel)]="formDetalle.bancoDestino" />
+      </div>
+      <div class="field">
+        <label>Monto transferido</label>
+        <input type="number" [(ngModel)]="formDetalle.montoTransferido" />
+      </div>
+    </div>
+    <div class="toolbar" style="margin-top:14px;">
+      <button class="btn btn-primary" (click)="guardarDetalle()" [disabled]="!formDetalle.montoFactura">Guardar detalle</button>
+    </div>
+    <div *ngIf="msg" class="success-box">{{ msg }}</div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title">Resumen actual</div>
+    <div *ngIf="cabecera" class="summary-box">
+      <div><strong>Proyecto:</strong> {{ cabecera.proyecto || '-' }}</div>
+      <div><strong>Proveedor:</strong> {{ cabecera.proveedor || '-' }}</div>
+      <div><strong>Especialidad:</strong> {{ cabecera.especialidad || '-' }}</div>
+      <div><strong>Servicio:</strong> {{ cabecera.servicio || '-' }}</div>
+      <div><strong>Moneda:</strong> {{ cabecera.moneda || '-' }}</div>
+      <div><strong>Cotización:</strong> {{ formatMoney(cabecera.montoCotizacion) }}</div>
+      <div><strong>% Garantía:</strong> {{ formatPct(cabecera.porcentajeGarantia) }}</div>
+      <div><strong>% Detracción:</strong> {{ formatPct(cabecera.porcentajeDetraccion) }}</div>
+    </div>
+    <div *ngIf="!cabecera" class="empty-state">Selecciona una valorización para ver el detalle y el resumen.</div>
+  </section>
+</div>
+
+<div class="panel">
+  <div class="panel-title">Detalle valorizado</div>
+  <div *ngIf="cargando" class="empty-state">Cargando...</div>
+  <div class="table-wrap" *ngIf="detalle.length">
+    <table>
+      <thead>
+        <tr>
+          <th>F. Fact.</th>
+          <th>N° Factura</th>
+          <th>Base imponible</th>
+          <th>IGV</th>
+          <th>Mto. Factura</th>
+          <th>Descripción</th>
+          <th>Detracción</th>
+          <th>Garantía</th>
+          <th>Otros desc.</th>
+          <th>A abonar</th>
+          <th>F. Transf.</th>
+          <th>N° Op.</th>
+          <th>Banco TF</th>
+          <th>Banco destino</th>
+          <th>Monto transf.</th>
+          <th>A favor</th>
+          <th>Deuda</th>
+          <th>% Avance</th>
+          <th>% Acum.</th>
+          <th>% Inic.</th>
+          <th>% Final</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of detalle">
+          <td>{{ row.fechaFactura | date:'dd/MM/yyyy' }}</td>
+          <td>{{ row.numeroFactura || '-' }}</td>
+          <td>{{ formatMoney(row.baseImponible) }}</td>
+          <td>{{ formatMoney(row.igv) }}</td>
+          <td>{{ formatMoney(row.montoFactura) }}</td>
+          <td>{{ row.descripcion || '-' }}</td>
+          <td>{{ formatMoney(row.detraccion) }}</td>
+          <td>{{ formatMoney(row.garantia) }}</td>
+          <td>{{ formatMoney(row.otrosDescuentos) }}</td>
+          <td>{{ formatMoney(row.aAbonar) }}</td>
+          <td>{{ row.fechaTransferencia | date:'dd/MM/yyyy' }}</td>
+          <td>{{ row.numeroOperacion || '-' }}</td>
+          <td>{{ row.bancoTransferencia || '-' }}</td>
+          <td>{{ row.bancoDestino || '-' }}</td>
+          <td>{{ formatMoney(row.montoTransferido) }}</td>
+          <td>{{ formatMoney(row.aFavor) }}</td>
+          <td>{{ formatMoney(row.deuda) }}</td>
+          <td>{{ formatPct(row.porcentajeAvance) }}</td>
+          <td>{{ formatPct(row.porcentajeAcumulado) }}</td>
+          <td>{{ formatPct(row.porcentajeInicial) }}</td>
+          <td>{{ formatPct(row.porcentajeFinal) }}</td>
+          <td class="actions">
+            <button class="btn btn-secondary" (click)="editarDetalle(row)">Editar</button>
+            <button class="btn btn-danger" (click)="eliminarDetalle(row)">Eliminar</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div *ngIf="!detalle.length" class="empty-state">No hay detalle registrado todavía.</div>
+</div>

@@ -9,6 +9,7 @@ import { RequerimientosPage } from './pages/requerimientos/requerimientos.page';
 import { OrdenesCompraPage } from './pages/ordenes-compra/ordenes-compra.page';
 import { ComprasPage } from './pages/compras/compras.page';
 import { KardexPage } from './pages/kardex/kardex.page';
+import { ValorizacionesPage } from './pages/valorizaciones/valorizaciones.page';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -22,5 +23,6 @@ export const routes: Routes = [
   { path: 'ordenes-compra', component: OrdenesCompraPage },
   { path: 'compras', component: ComprasPage },
   { path: 'kardex', component: KardexPage },
+  { path: 'valorizaciones', component: ValorizacionesPage },
   { path: '**', redirectTo: 'dashboard' }
 ];

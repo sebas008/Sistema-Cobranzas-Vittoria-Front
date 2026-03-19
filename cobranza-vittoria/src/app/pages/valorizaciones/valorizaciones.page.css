@@ -1,0 +1,25 @@
+.valuation-split,
+.valuation-split-bottom {
+  grid-template-columns: 1fr 1fr;
+}
+
+.summary-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #fafbff;
+}
+
+.stat-value.small {
+  font-size: 1.2rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 1200px) {
+  .summary-box {
+    grid-template-columns: 1fr;
+  }
+}
