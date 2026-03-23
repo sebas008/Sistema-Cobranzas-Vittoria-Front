@@ -104,7 +104,7 @@
             <td>{{ row.especialidad || row.nombreEspecialidad || '-' }}</td>
             <td>{{ row.servicio || '-' }}</td>
             <td>{{ row.moneda || '-' }}</td>
-            <td>{{ formatMoney(row.montoCotizacion) }}</td>
+            <td>{{ formatMoney(row.montoCotizacion, row.moneda) }}</td>
             <td class="actions">
               <button class="btn btn-secondary" (click)="editarConfiguracion(row)">Editar</button>
               <button class="btn btn-primary" (click)="crearDesdeConfiguracion(row)">Usar</button>
@@ -159,7 +159,7 @@
             <td>{{ row.proyecto || row.nombreProyecto || '-' }}</td>
             <td>{{ row.proveedor || row.razonSocial || '-' }}</td>
             <td>{{ row.especialidad || row.nombreEspecialidad || '-' }}</td>
-            <td>{{ formatMoney(row.montoCotizacion) }}</td>
+            <td>{{ formatMoney(row.montoCotizacion, row.moneda) }}</td>
             <td><button class="btn btn-secondary" (click)="ver(row.idValorizacion)">Ver</button></td>
           </tr>
         </tbody>
@@ -170,10 +170,11 @@
 </div>
 
 <div class="kpi-strip" *ngIf="resumen">
-  <div class="stat-card"><div class="stat-label">Cotización</div><div class="stat-value">{{ formatMoney(resumen.cotizacion || resumen.montoCotizacion) }}</div></div>
-  <div class="stat-card"><div class="stat-label">Facturado</div><div class="stat-value">{{ formatMoney(resumen.facturado) }}</div></div>
-  <div class="stat-card"><div class="stat-label">Transferido</div><div class="stat-value">{{ formatMoney(resumen.transferido) }}</div></div>
-  <div class="stat-card"><div class="stat-label">Resta / Liquidar</div><div class="stat-value small">{{ formatMoney(resumen.resta) }} / {{ formatMoney(resumen.liquidar) }}</div></div>
+  <div class="stat-card"><div class="stat-label">Cotización</div><div class="stat-value">{{ formatMoney(resumen.cotizacion, monedaActual) }}</div></div>
+  <div class="stat-card"><div class="stat-label">Facturado</div><div class="stat-value">{{ formatMoney(resumen.facturado, monedaActual) }}</div></div>
+  <div class="stat-card"><div class="stat-label">Transferido</div><div class="stat-value">{{ formatMoney(resumen.transferido, monedaActual) }}</div></div>
+  <div class="stat-card"><div class="stat-label">{{ formatPct(resumen.porcentajeGarantia || porcentajeGarantiaActual) }} garantía</div><div class="stat-value">{{ formatMoney(resumen.garantiaRetenida, monedaActual) }}</div></div>
+  <div class="stat-card"><div class="stat-label">{{ formatPct(resumen.porcentajeDetraccion || porcentajeDetraccionActual) }} detracción</div><div class="stat-value">{{ formatMoney(resumen.detraccionAcumulada, monedaActual) }}</div></div>
 </div>
 
 <div class="split valuation-split-bottom">
@@ -190,12 +191,35 @@
       </div>
       <div class="field">
         <label>Mto. Factura</label>
-        <input type="number" [(ngModel)]="formDetalle.montoFactura" />
+        <input type="number" [(ngModel)]="formDetalle.montoFactura" (ngModelChange)="onMontoFacturaChange()" />
       </div>
       <div class="field">
         <label>Otros descuentos</label>
         <input type="number" [(ngModel)]="formDetalle.otrosDescuentos" />
       </div>
+
+      <div class="field option-field">
+        <label class="checkline"><input type="checkbox" [(ngModel)]="formDetalle.aplicaDetraccion" [disabled]="!detraccionHabilitadaPorMonto" /> Aplicar detracción</label>
+        <div class="hint">Se activa automáticamente desde S/ 700.00.</div>
+      </div>
+      <div class="field option-field">
+        <label class="checkline"><input type="checkbox" [(ngModel)]="formDetalle.aplicaGarantia" /> Aplicar garantía</label>
+        <div class="hint">Puedes incluir o excluir la retención.</div>
+      </div>
+
+      <div class="field preview-field">
+        <label>Descuento detracción</label>
+        <input [value]="formatMoney(montoDetraccionCalculado, monedaActual)" readonly />
+      </div>
+      <div class="field preview-field">
+        <label>Descuento garantía</label>
+        <input [value]="formatMoney(montoGarantiaCalculado, monedaActual)" readonly />
+      </div>
+      <div class="field preview-field" style="grid-column:1/-1;">
+        <label>Monto a abonar estimado</label>
+        <input [value]="formatMoney(montoAAbonarCalculado, monedaActual)" readonly />
+      </div>
+
       <div class="field" style="grid-column:1/-1;">
         <label>Descripción</label>
         <textarea [(ngModel)]="formDetalle.descripcion"></textarea>
@@ -235,7 +259,7 @@
       <div><strong>Especialidad:</strong> {{ cabecera.especialidad || '-' }}</div>
       <div><strong>Servicio:</strong> {{ cabecera.servicio || '-' }}</div>
       <div><strong>Moneda:</strong> {{ cabecera.moneda || '-' }}</div>
-      <div><strong>Cotización:</strong> {{ formatMoney(cabecera.montoCotizacion) }}</div>
+      <div><strong>Cotización:</strong> {{ formatMoney(cabecera.montoCotizacion, cabecera.moneda) }}</div>
       <div><strong>% Garantía:</strong> {{ formatPct(cabecera.porcentajeGarantia) }}</div>
       <div><strong>% Detracción:</strong> {{ formatPct(cabecera.porcentajeDetraccion) }}</div>
     </div>
@@ -278,21 +302,21 @@
         <tr *ngFor="let row of detalle">
           <td>{{ row.fechaFactura | date:'dd/MM/yyyy' }}</td>
           <td>{{ row.numeroFactura || '-' }}</td>
-          <td>{{ formatMoney(row.baseImponible) }}</td>
-          <td>{{ formatMoney(row.igv) }}</td>
-          <td>{{ formatMoney(row.montoFactura) }}</td>
+          <td>{{ formatMoney(row.baseImponible, monedaActual) }}</td>
+          <td>{{ formatMoney(row.igv, monedaActual) }}</td>
+          <td>{{ formatMoney(row.montoFactura, monedaActual) }}</td>
           <td>{{ row.descripcion || '-' }}</td>
-          <td>{{ formatMoney(row.detraccion) }}</td>
-          <td>{{ formatMoney(row.garantia) }}</td>
-          <td>{{ formatMoney(row.otrosDescuentos) }}</td>
-          <td>{{ formatMoney(row.aAbonar) }}</td>
+          <td>{{ formatMoney(row.detraccion, monedaActual) }}</td>
+          <td>{{ formatMoney(row.garantia, monedaActual) }}</td>
+          <td>{{ formatMoney(row.otrosDescuentos, monedaActual) }}</td>
+          <td>{{ formatMoney(row.aAbonar, monedaActual) }}</td>
           <td>{{ row.fechaTransferencia | date:'dd/MM/yyyy' }}</td>
           <td>{{ row.numeroOperacion || '-' }}</td>
           <td>{{ row.bancoTransferencia || '-' }}</td>
           <td>{{ row.bancoDestino || '-' }}</td>
-          <td>{{ formatMoney(row.montoTransferido) }}</td>
-          <td>{{ formatMoney(row.aFavor) }}</td>
-          <td>{{ formatMoney(row.deuda) }}</td>
+          <td>{{ formatMoney(row.montoTransferido, monedaActual) }}</td>
+          <td>{{ formatMoney(row.aFavor, monedaActual) }}</td>
+          <td>{{ formatMoney(row.deuda, monedaActual) }}</td>
           <td>{{ formatPct(row.porcentajeAvance) }}</td>
           <td>{{ formatPct(row.porcentajeAcumulado) }}</td>
           <td>{{ formatPct(row.porcentajeInicial) }}</td>

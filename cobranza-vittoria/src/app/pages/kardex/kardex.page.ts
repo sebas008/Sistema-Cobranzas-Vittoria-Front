@@ -13,8 +13,12 @@ import { MaestraService } from '../../core/services/maestra.service';
 })
 export class KardexPage implements OnInit {
   rows: any[] = [];
+  rowsAgrupadas: any[] = [];
+  comprasRealizadas: any[] = [];
+  materialesCompraSeleccionada: any[] = [];
   especialidades: any[] = [];
   materiales: any[] = [];
+  msg = '';
 
   filtros = {
     idMaterial: null as number | null,
@@ -23,19 +27,25 @@ export class KardexPage implements OnInit {
     fechaHasta: ''
   };
 
+  salida = {
+    idCompra: null as number | null,
+    idMaterial: null as number | null,
+    idEspecialidad: null as number | null,
+    fechaMovimiento: '',
+    cantidadSalida: 1,
+    observacion: ''
+  };
+
   constructor(
     private kardex: KardexService,
     private maestra: MaestraService
   ) {}
 
   ngOnInit(): void {
-    this.loadCatalogos();
-    this.load();
-  }
-
-  loadCatalogos(): void {
     this.maestra.materiales(true).subscribe({ next: (x: any) => this.materiales = x ?? [], error: () => this.materiales = [] });
     this.maestra.especialidades(true).subscribe({ next: (x: any) => this.especialidades = x ?? [], error: () => this.especialidades = [] });
+    this.salida.fechaMovimiento = new Date().toISOString().slice(0, 10);
+    this.load();
   }
 
   load(): void {
@@ -46,18 +56,74 @@ export class KardexPage implements OnInit {
       fechaHasta: this.filtros.fechaHasta || null
     }).subscribe({
       next: (x: any) => {
-        const data = x || [];
-        this.rows = [...data].sort((a: any, b: any) => {
-          const ea = (a.especialidad || a.Especialidad || '').toString();
-          const eb = (b.especialidad || b.Especialidad || '').toString();
-          if (ea < eb) return -1;
-          if (ea > eb) return 1;
-          const fa = (a.fechaMovimiento || a.FechaMovimiento || '').toString();
-          const fb = (b.fechaMovimiento || b.FechaMovimiento || '').toString();
-          return fa.localeCompare(fb);
-        });
+        this.rows = x || [];
+        this.rowsAgrupadas = this.rows;
+        const map = new Map<number, any>();
+
+        for (const row of this.rows) {
+          const idCompra = Number(row.idCompra ?? row.IdCompra ?? 0);
+          if (!idCompra) continue;
+
+          const numeroCompra = row.numeroCompra || row.NumeroCompra || `Compra ${idCompra}`;
+          const especialidad = row.especialidad || row.Especialidad || '-';
+          const idMaterial = Number(row.idMaterial ?? row.IdMaterial ?? 0);
+          const material = row.material || row.Material || '-';
+          const idEspecialidad = row.idEspecialidad ?? row.IdEspecialidad ?? null;
+
+          if (!map.has(idCompra)) {
+            map.set(idCompra, { idCompra, numeroCompra, especialidad, items: [] });
+          }
+
+          const compra = map.get(idCompra);
+          if (!compra.items.some((m: any) => m.idMaterial === idMaterial)) {
+            compra.items.push({ idMaterial, material, idEspecialidad });
+          }
+        }
+
+        this.comprasRealizadas = Array.from(map.values()).sort((a: any, b: any) => b.idCompra - a.idCompra);
       },
-      error: () => this.rows = []
+      error: () => {
+        this.rows = [];
+        this.rowsAgrupadas = [];
+        this.comprasRealizadas = [];
+      }
+    });
+  }
+
+  compraSalidaChange(): void {
+    const compra = this.comprasRealizadas.find((c: any) => c.idCompra === this.salida.idCompra);
+    this.materialesCompraSeleccionada = compra?.items || [];
+    this.salida.idMaterial = null;
+    this.salida.idEspecialidad = null;
+  }
+
+  materialSalidaChange(): void {
+    const item = this.materialesCompraSeleccionada.find((m: any) => m.idMaterial === this.salida.idMaterial);
+    if (item) this.salida.idEspecialidad = item.idEspecialidad ?? null;
+  }
+
+  registrarSalida(): void {
+    if (!this.salida.idCompra || !this.salida.idMaterial || !this.salida.idEspecialidad || !this.salida.fechaMovimiento || !this.salida.cantidadSalida) {
+      return;
+    }
+
+    this.kardex.registrarSalida(this.salida).subscribe({
+      next: (x: any) => {
+        this.msg = x?.mensaje || 'Salida registrada correctamente.';
+        this.salida = {
+          idCompra: null,
+          idMaterial: null,
+          idEspecialidad: null,
+          fechaMovimiento: new Date().toISOString().slice(0, 10),
+          cantidadSalida: 1,
+          observacion: ''
+        };
+        this.materialesCompraSeleccionada = [];
+        this.load();
+      },
+      error: (e: any) => {
+        this.msg = e?.error?.message || 'No se pudo registrar la salida.';
+      }
     });
   }
 
@@ -93,8 +159,10 @@ export class KardexPage implements OnInit {
 
   esNuevoGrupo(index: number): boolean {
     if (index === 0) return true;
-    const actual = this.rows[index]?.especialidad || this.rows[index]?.Especialidad || '';
-    const anterior = this.rows[index - 1]?.especialidad || this.rows[index - 1]?.Especialidad || '';
-    return actual !== anterior;
+    const compraActual = this.rowsAgrupadas[index]?.idCompra || this.rowsAgrupadas[index]?.IdCompra || 0;
+    const compraAnterior = this.rowsAgrupadas[index - 1]?.idCompra || this.rowsAgrupadas[index - 1]?.IdCompra || 0;
+    const especialidadActual = this.rowsAgrupadas[index]?.especialidad || this.rowsAgrupadas[index]?.Especialidad || '';
+    const especialidadAnterior = this.rowsAgrupadas[index - 1]?.especialidad || this.rowsAgrupadas[index - 1]?.Especialidad || '';
+    return compraActual !== compraAnterior || especialidadActual !== especialidadAnterior;
   }
 }

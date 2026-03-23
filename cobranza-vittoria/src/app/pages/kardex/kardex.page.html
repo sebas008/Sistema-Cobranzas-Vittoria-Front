@@ -1,7 +1,7 @@
 <div class="page-header">
   <div>
     <div class="page-title">Kardex</div>
-    <div class="page-subtitle">Kardex alimentado desde compras, separado por especialidad.</div>
+    <div class="page-subtitle">Kardex alimentado desde compras y actualizado con salidas de almacén.</div>
   </div>
 </div>
 
@@ -46,17 +46,68 @@
   </div>
 </section>
 
+<section class="panel" style="margin-top:18px;">
+  <div class="panel-title">Actualizar salidas desde compra realizada</div>
+
+  <div class="form-grid four">
+    <div class="field">
+      <label>Compra realizada</label>
+      <select [(ngModel)]="salida.idCompra" (ngModelChange)="compraSalidaChange()">
+        <option [ngValue]="null">Seleccionar</option>
+        <option *ngFor="let c of comprasRealizadas" [ngValue]="c.idCompra">
+          {{ c.numeroCompra }} - {{ c.especialidad }}
+        </option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Material</label>
+      <select [(ngModel)]="salida.idMaterial" (ngModelChange)="materialSalidaChange()">
+        <option [ngValue]="null">Seleccionar</option>
+        <option *ngFor="let m of materialesCompraSeleccionada" [ngValue]="m.idMaterial">
+          {{ m.material }}
+        </option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Especialidad</label>
+      <select [(ngModel)]="salida.idEspecialidad">
+        <option [ngValue]="null">Seleccionar</option>
+        <option *ngFor="let e of especialidades" [ngValue]="e.idEspecialidad">
+          {{ e.nombre }}
+        </option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Fecha salida</label>
+      <input type="date" [(ngModel)]="salida.fechaMovimiento" />
+    </div>
+    <div class="field">
+      <label>Cantidad salida</label>
+      <input type="number" min="0.01" step="0.01" [(ngModel)]="salida.cantidadSalida" />
+    </div>
+    <div class="field" style="grid-column:1/-1;">
+      <label>Observación</label>
+      <input [(ngModel)]="salida.observacion" />
+    </div>
+  </div>
+
+  <div class="toolbar" style="margin-top: 14px;">
+    <button class="btn btn-primary" (click)="registrarSalida()">Actualizar salidas</button>
+  </div>
+</section>
+
 <section class="panel" style="margin-top: 18px;">
   <div class="panel-title">Kardex desde compras</div>
 
-  <div *ngIf="!rows.length" class="empty-state">
+  <div *ngIf="!rowsAgrupadas.length" class="empty-state">
     No hay movimientos para mostrar.
   </div>
 
-  <div *ngIf="rows.length" class="table-wrap">
+  <div *ngIf="rowsAgrupadas.length" class="table-wrap">
     <table id="tabla-kardex-export">
       <thead>
         <tr>
+          <th>Compra</th>
           <th>Especialidad</th>
           <th>Fecha</th>
           <th>Material</th>
@@ -67,20 +118,19 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let row of rows; let i = index">
-          <td>
-            <strong *ngIf="esNuevoGrupo(i)">
-              {{ row.especialidad || row.Especialidad || '-' }}
-            </strong>
-          </td>
+        <tr *ngFor="let row of rowsAgrupadas; let i = index">
+          <td>{{ row.numeroCompra || row.NumeroCompra || '-' }}</td>
+          <td><strong *ngIf="esNuevoGrupo(i)">{{ row.especialidad || row.Especialidad || '-' }}</strong></td>
           <td>{{ row.fechaMovimiento || row.FechaMovimiento ? ((row.fechaMovimiento || row.FechaMovimiento) | date:'dd/MM/yyyy') : '-' }}</td>
           <td>{{ row.material || row.Material || '-' }}</td>
-          <td>{{ row.cantidadEntrada || row.CantidadEntrada || row.entrada || row.Entrada || 0 }}</td>
-          <td>{{ row.cantidadSalida || row.CantidadSalida || row.salida || row.Salida || 0 }}</td>
-          <td>{{ row.stockResultante || row.StockResultante || row.stock || row.Stock || 0 }}</td>
+          <td>{{ row.entrada || row.Entrada || 0 }}</td>
+          <td>{{ row.salida || row.Salida || 0 }}</td>
+          <td>{{ row.stock || row.Stock || 0 }}</td>
           <td>{{ row.observacion || row.Observacion || '-' }}</td>
         </tr>
       </tbody>
     </table>
   </div>
+
+  <div *ngIf="msg" class="empty-state" style="margin-top:14px;">{{ msg }}</div>
 </section>

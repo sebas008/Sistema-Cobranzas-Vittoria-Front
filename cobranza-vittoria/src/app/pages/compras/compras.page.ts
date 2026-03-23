@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ComprasService } from '../../core/services/compras.service';
@@ -11,6 +11,8 @@ import { ComprasService } from '../../core/services/compras.service';
   styleUrl: './compras.page.css'
 })
 export class ComprasPage implements OnInit {
+  @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
+
   pendientes: any[] = [];
   comprasCerradas: any[] = [];
   detalleOc: any = null;
@@ -25,9 +27,6 @@ export class ComprasPage implements OnInit {
     idProveedor: null,
     fechaCompra: '',
     incluyeIgv: true,
-    subtotalSinIgv: 0,
-    montoIgv: 0,
-    montoTotal: 0,
     observacion: ''
   };
 
@@ -52,33 +51,19 @@ export class ComprasPage implements OnInit {
     this.compras.orden(idOrdenCompra).subscribe({
       next: (x: any) => {
         this.detalleCompra = null;
-
-        const oc = x?.ordenCompra;
-        const items = (x?.items || []).map((it: any) => ({
-          ...it,
-          precioUnitario: Number(it.precioUnitario || it.PrecioUnitario || 0)
-        }));
-        this.detalleOc = { ...x, items };
-        const total = items.reduce((acc: number, it: any) => {
-          const cantidad = Number(it.cantidad || it.Cantidad || 0);
-          const pu = Number(it.precioUnitario || it.PrecioUnitario || 0);
-          return acc + (cantidad * pu);
-        }, 0);
-
+        this.detalleOc = x;
+        const oc = x?.ordenCompra || x?.head || {};
         this.form = {
           numeroCompra: '',
           idOrdenCompra: oc?.idOrdenCompra ?? oc?.IdOrdenCompra ?? null,
           idProveedor: oc?.idProveedor ?? oc?.IdProveedor ?? null,
           fechaCompra: '',
           incluyeIgv: true,
-          subtotalSinIgv: this.redondear(total / 1.18),
-          montoIgv: this.redondear(total - (total / 1.18)),
-          montoTotal: this.redondear(total),
           observacion: ''
         };
-
         this.documentos = [];
         this.selectedFiles = [];
+        if (this.fileInput?.nativeElement) this.fileInput.nativeElement.value = '';
         this.msg = 'OC cargada para continuar el flujo de compra.';
       },
       error: () => {
@@ -92,14 +77,11 @@ export class ComprasPage implements OnInit {
     const idCompra = row.idCompra || row.IdCompra;
     this.compras.compra(idCompra).subscribe({
       next: (x: any) => {
-        this.detalleCompra = x;
         this.detalleOc = null;
+        this.detalleCompra = x;
         this.documentos = x?.documentos || [];
-        const compra = x?.compra || x || {};
-        this.form.incluyeIgv = compra?.incluyeIGV ?? compra?.IncluyeIGV ?? compra?.incluyeIgv ?? true;
-        this.form.subtotalSinIgv = Number(compra?.subtotalSinIGV ?? compra?.SubtotalSinIGV ?? compra?.subtotalSinIgv ?? 0);
-        this.form.montoIgv = Number(compra?.montoIGV ?? compra?.MontoIGV ?? compra?.montoIgv ?? 0);
-        this.form.montoTotal = Number(compra?.montoTotal ?? compra?.MontoTotal ?? 0);
+        this.selectedFiles = [];
+        if (this.fileInput?.nativeElement) this.fileInput.nativeElement.value = '';
       },
       error: () => {
         this.detalleCompra = null;
@@ -111,7 +93,35 @@ export class ComprasPage implements OnInit {
   onFilesSelected(event: any) {
     const files = Array.from(event?.target?.files || []) as File[];
     this.selectedFiles = files.filter((f: File) => f.name.toLowerCase().endsWith('.pdf'));
-    if (!this.selectedFiles.length && files.length) this.msg = 'Solo se permiten archivos PDF.';
+    if (!this.selectedFiles.length && files.length) {
+      this.msg = 'Solo se permiten archivos PDF.';
+    }
+  }
+
+  get itemsOc(): any[] {
+    return this.detalleOc?.items || [];
+  }
+
+  get montoBaseConIgv(): number {
+    return Math.round((this.itemsOc.reduce((acc: number, item: any) => {
+      const cantidad = Number(item.cantidad || item.Cantidad || 0);
+      const pu = Number(item.precioUnitario || item.PrecioUnitario || 0);
+      return acc + (cantidad * pu);
+    }, 0) + Number.EPSILON) * 100) / 100;
+  }
+
+  get subtotalSinIgvCalculado(): number {
+    return Math.round(((this.montoBaseConIgv / 1.18) + Number.EPSILON) * 100) / 100;
+  }
+
+  get montoIgvCalculado(): number {
+    return this.form.incluyeIgv
+      ? Math.round(((this.montoBaseConIgv - this.subtotalSinIgvCalculado) + Number.EPSILON) * 100) / 100
+      : 0;
+  }
+
+  get montoTotalCalculado(): number {
+    return this.form.incluyeIgv ? this.montoBaseConIgv : this.subtotalSinIgvCalculado;
   }
 
   registrarCompra() {
@@ -125,7 +135,7 @@ export class ComprasPage implements OnInit {
       montoIGV: this.montoIgvCalculado,
       montoTotal: this.montoTotalCalculado,
       observacion: this.form.observacion || '',
-      items: (this.detalleOc?.items || []).map((item: any) => ({
+      items: this.itemsOc.map((item: any) => ({
         idMaterial: Number(item.idMaterial || item.IdMaterial || 0),
         cantidad: Number(item.cantidad || item.Cantidad || 0),
         precioUnitario: Number(item.precioUnitario || item.PrecioUnitario || 0)
@@ -150,73 +160,34 @@ export class ComprasPage implements OnInit {
         this.compras.uploadDocumentosCompra(idCompra, this.selectedFiles).subscribe({
           next: () => {
             this.msg = 'Compra registrada y documentos subidos correctamente.';
-            this.selectedFiles = [];
             this.resetForm();
             this.load();
           },
           error: (e: any) => {
             this.msg = e?.error?.message || 'La compra se registró, pero falló la subida de documentos.';
+            this.resetForm();
             this.load();
           }
         });
       },
-      error: (e: any) => this.msg = e?.error?.message || 'No se pudo registrar la compra.'
+      error: (e: any) => {
+        this.msg = e?.error?.message || 'No se pudo registrar la compra.';
+      }
     });
-  }
-
-  get montoBaseCalculado(): number {
-    const items = this.detalleOc?.items || [];
-    return this.redondear(items.reduce((acc: number, item: any) => {
-      const cantidad = Number(item.cantidad || item.Cantidad || 0);
-      const pu = Number(item.precioUnitario || item.PrecioUnitario || 0);
-      return acc + (cantidad * pu);
-    }, 0));
-  }
-
-  get subtotalSinIgvCalculado(): number {
-    if (this.form.incluyeIgv) {
-      return this.redondear(this.montoBaseCalculado / 1.18);
-    }
-    return this.redondear(this.montoBaseCalculado);
-  }
-
-  get montoIgvCalculado(): number {
-    if (this.form.incluyeIgv) {
-      return this.redondear(this.montoBaseCalculado - this.subtotalSinIgvCalculado);
-    }
-    return this.redondear(this.montoBaseCalculado * 0.18);
-  }
-
-  get montoTotalCalculado(): number {
-    if (this.form.incluyeIgv) {
-      return this.redondear(this.montoBaseCalculado);
-    }
-    return this.redondear(this.subtotalSinIgvCalculado + this.montoIgvCalculado);
-  }
-
-  formatFechaSolo(valor: any): string {
-    if (!valor) return '-';
-    const raw = String(valor);
-    if (raw.includes('T')) return raw.slice(0, 10);
-    if (raw.includes(' ')) return raw.slice(0, 10);
-    return raw.length >= 10 ? raw.slice(0, 10) : raw;
-  }
-
-  private redondear(valor: number): number {
-    return Math.round((Number(valor || 0) + Number.EPSILON) * 100) / 100;
   }
 
   resetForm() {
     this.detalleOc = null;
+    this.detalleCompra = null;
+    this.documentos = [];
+    this.selectedFiles = [];
+    if (this.fileInput?.nativeElement) this.fileInput.nativeElement.value = '';
     this.form = {
       numeroCompra: '',
       idOrdenCompra: null,
       idProveedor: null,
       fechaCompra: '',
       incluyeIgv: true,
-      subtotalSinIgv: 0,
-      montoIgv: 0,
-      montoTotal: 0,
       observacion: ''
     };
   }

@@ -1,0 +1,11 @@
+.providers-layout {
+  align-items: start;
+}
+
+.providers-toolbar {
+  margin-bottom: 0;
+}
+
+.providers-message {
+  background: #fafbff;
+}

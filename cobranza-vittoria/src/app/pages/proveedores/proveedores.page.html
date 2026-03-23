@@ -1,25 +1,13 @@
 <div class="page-header">
   <div>
     <div class="page-title">Proveedores</div>
-    <div class="page-subtitle">Gestión de proveedores y especialidades relacionadas.</div>
+    <div class="page-subtitle">Gestión y mantenimiento del maestro de proveedores.</div>
   </div>
 </div>
 
-<div class="split">
+<div class="split providers-layout">
   <section class="panel">
     <div class="panel-title">Listado</div>
-
-    <div class="filters">
-      <div class="field">
-        <label>Especialidad</label>
-        <select [(ngModel)]="filtroEspecialidad" (change)="load()">
-          <option [ngValue]="null">Todas</option>
-          <option *ngFor="let e of especialidades" [ngValue]="e.idEspecialidad">
-            {{ e.nombre }}
-          </option>
-        </select>
-      </div>
-    </div>
 
     <div *ngIf="!rows.length" class="empty-state">
       No hay proveedores registrados.
@@ -33,6 +21,7 @@
             <th>RUC</th>
             <th>Contacto</th>
             <th>Teléfono</th>
+            <th>Correo</th>
             <th></th>
           </tr>
         </thead>
@@ -42,6 +31,7 @@
             <td>{{ row.ruc }}</td>
             <td>{{ row.contacto || '-' }}</td>
             <td>{{ row.telefono || '-' }}</td>
+            <td>{{ row.correo || '-' }}</td>
             <td>
               <button class="btn btn-secondary" (click)="edit(row)">Editar</button>
             </td>
@@ -129,50 +119,14 @@
       </div>
     </div>
 
-    <div class="toolbar" style="margin-top: 14px;">
+    <div class="toolbar providers-toolbar" style="margin-top: 14px;">
       <button class="btn btn-primary" (click)="save()" [disabled]="!form.razonSocial || !form.ruc">
-        Guardar
+        Guardar proveedor
       </button>
       <button class="btn btn-ghost" (click)="reset()">Limpiar</button>
     </div>
 
-    <div class="panel" style="padding: 16px; margin-top: 18px;">
-      <div class="panel-title" style="font-size: 1rem;">Especialidades</div>
-
-      <div *ngIf="!form.idProveedor" class="empty-state" style="margin-bottom: 12px;">
-        Guarda primero el proveedor para luego asociarle una o varias especialidades.
-      </div>
-
-      <div class="form-grid two">
-        <div
-          class="field"
-          *ngFor="let e of especialidades"
-          style="margin-bottom: 8px;"
-        >
-          <label style="display: flex; align-items: center; gap: 8px;">
-            <input
-              type="checkbox"
-              [checked]="especialidadesSeleccionadas.includes(e.idEspecialidad)"
-              (change)="onEspecialidadToggle(e.idEspecialidad, $any($event.target).checked)"
-              [disabled]="!form.idProveedor"
-            />
-            {{ e.nombre }}
-          </label>
-        </div>
-      </div>
-
-      <div class="toolbar">
-        <button
-          class="btn btn-success"
-          (click)="guardarEspecialidadesProveedor()"
-          [disabled]="!form.idProveedor"
-        >
-          Guardar especialidades
-        </button>
-      </div>
-    </div>
-
-    <div *ngIf="msg" class="empty-state" style="margin-top: 14px; padding: 14px;">
+    <div *ngIf="msg" class="empty-state providers-message" style="margin-top: 14px; padding: 14px;">
       {{ msg }}
     </div>
   </section>

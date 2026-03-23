@@ -18,6 +18,31 @@
   line-height: 1.4;
 }
 
+.option-field {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fafbff;
+}
+
+.checkline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+}
+
+.hint {
+  margin-top: 8px;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.preview-field input {
+  font-weight: 700;
+  background: #f8fafc;
+}
+
 @media (max-width: 1200px) {
   .summary-box {
     grid-template-columns: 1fr;

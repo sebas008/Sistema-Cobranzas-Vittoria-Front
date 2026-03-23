@@ -1,3 +1,4 @@
+
 import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
 
@@ -29,5 +30,9 @@ export class KardexService {
     return this.api.http.get<any[]>(
       `${this.api.baseUrl}/api/almacen/kardex/movimientos${qs ? '?' + qs : ''}`
     );
+  }
+
+  registrarSalida(dto: any) {
+    return this.api.http.post<any>(`${this.api.baseUrl}/api/almacen/kardex/salidas`, dto);
   }
 }

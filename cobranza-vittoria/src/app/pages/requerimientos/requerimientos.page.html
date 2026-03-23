@@ -7,68 +7,11 @@
 
 <div class="page-grid-2">
   <section class="panel">
-    <div class="panel-title">Listado</div>
+    <div class="panel-title">Detalle del requerimiento</div>
 
-    <div class="filters-grid">
-      <div class="field">
-        <label>Estado</label>
-        <select [(ngModel)]="filtros.estado" (change)="load()">
-          <option value="">Todos</option>
-          <option value="Registrado">Registrado</option>
-          <option value="ValidadoAlmacen">Validado almacén</option>
-          <option value="Aprobado">Aprobado</option>
-          <option value="Atendido">Atendido</option>
-          <option value="Anulado">Anulado</option>
-        </select>
-      </div>
+    <div *ngIf="!detalle" class="empty-state">Selecciona un requerimiento del listado para ver primero el detalle.</div>
 
-      <div class="field">
-        <label>Especialidad</label>
-        <select [(ngModel)]="filtros.idEspecialidad" (change)="load()">
-          <option [ngValue]="null">Todas</option>
-          <option *ngFor="let e of especialidades" [ngValue]="e.idEspecialidad">{{ e.nombre }}</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Proyecto</label>
-        <select [(ngModel)]="filtros.idProyecto" (change)="load()">
-          <option [ngValue]="null">Todos</option>
-          <option *ngFor="let p of proyectos" [ngValue]="p.idProyecto">{{ p.nombreProyecto }}</option>
-        </select>
-      </div>
-    </div>
-
-    <div *ngIf="!rows.length" class="empty-state">No hay requerimientos registrados.</div>
-    <div *ngIf="rows.length" class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Número</th>
-            <th>Fecha</th>
-            <th>Especialidades</th>
-            <th>Proyecto</th>
-            <th>Solicitante</th>
-            <th>Estado</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let row of rows">
-            <td>{{ row.numeroRequerimiento }}</td>
-            <td>{{ row.fechaRequerimiento | date:'dd/MM/yyyy' }}</td>
-            <td>{{ row.especialidades || '-' }}</td>
-            <td>{{ row.nombreProyecto }}</td>
-            <td>{{ row.solicitante }}</td>
-            <td><span class="badge badge--pending">{{ row.estado }}</span></td>
-            <td class="actions"><button class="btn btn-secondary" (click)="view(row)">Ver</button></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div *ngIf="detalle" class="panel" style="margin-top:18px;">
-      <div class="panel-title">Detalle del requerimiento</div>
+    <div *ngIf="detalle">
       <div class="toolbar">
         <span class="list-chip">N° {{ detalle.requerimiento?.numeroRequerimiento }}</span>
         <span class="list-chip">{{ detalle.requerimiento?.estado }}</span>
@@ -85,9 +28,71 @@
             <tr *ngFor="let x of detalle.items">
               <td>{{ x.especialidad || '-' }}</td>
               <td>{{ x.material }}</td>
-              <td>{{ x.unidadMedida }}</td>
+              <td>{{ x.unidadMedida || x.unidad || '-' }}</td>
               <td>{{ x.cantidad }}</td>
               <td>{{ x.observacion || '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:18px;">
+      <div class="panel-title">Listado</div>
+
+      <div class="filters-grid">
+        <div class="field">
+          <label>Estado</label>
+          <select [(ngModel)]="filtros.estado" (change)="load()">
+            <option value="">Todos</option>
+            <option value="Registrado">Registrado</option>
+            <option value="ValidadoAlmacen">Validado almacén</option>
+            <option value="Aprobado">Aprobado</option>
+            <option value="Atendido">Atendido</option>
+            <option value="Anulado">Anulado</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Especialidad</label>
+          <select [(ngModel)]="filtros.idEspecialidad" (change)="load()">
+            <option [ngValue]="null">Todas</option>
+            <option *ngFor="let e of especialidades" [ngValue]="e.idEspecialidad">{{ e.nombre }}</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Proyecto</label>
+          <select [(ngModel)]="filtros.idProyecto" (change)="load()">
+            <option [ngValue]="null">Todos</option>
+            <option *ngFor="let p of proyectos" [ngValue]="p.idProyecto">{{ p.nombreProyecto }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div *ngIf="!rows.length" class="empty-state">No hay requerimientos registrados.</div>
+      <div *ngIf="rows.length" class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Número</th>
+              <th>Fecha</th>
+              <th>Especialidades</th>
+              <th>Proyecto</th>
+              <th>Solicitante</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of rows">
+              <td>{{ row.numeroRequerimiento }}</td>
+              <td>{{ row.fechaRequerimiento | date:'dd/MM/yyyy' }}</td>
+              <td>{{ row.especialidades || '-' }}</td>
+              <td>{{ row.nombreProyecto }}</td>
+              <td>{{ row.solicitante }}</td>
+              <td><span class="badge badge--pending">{{ row.estado }}</span></td>
+              <td class="actions"><button class="btn btn-secondary" (click)="view(row)">Ver</button></td>
             </tr>
           </tbody>
         </table>
@@ -124,11 +129,12 @@
 
       <div *ngIf="form.items.length" class="table-wrap">
         <table>
-          <thead><tr><th>Especialidad</th><th>Material</th><th>Cantidad</th><th>Observación</th><th></th></tr></thead>
+          <thead><tr><th>Especialidad</th><th>Material</th><th>Unidad</th><th>Cantidad</th><th>Observación</th><th></th></tr></thead>
           <tbody>
             <tr *ngFor="let x of form.items; index as i">
               <td>{{ x.especialidad || '-' }}</td>
               <td>{{ x.material }}</td>
+              <td>{{ x.unidadMedida || x.unidad || '-' }}</td>
               <td>{{ x.cantidad }}</td>
               <td>{{ x.observacion || '-' }}</td>
               <td class="actions"><button class="btn btn-secondary" (click)="abrirModalEspecialidades(i)">Editar</button> <button class="btn btn-danger" (click)="removeItem(i)">Quitar</button></td>
@@ -174,7 +180,7 @@
         <label>Material</label>
         <select [(ngModel)]="modalItem.idMaterial">
           <option [ngValue]="null">Seleccionar</option>
-          <option *ngFor="let m of materialesFiltradosModal" [ngValue]="m.idMaterial">{{ m.descripcion }}</option>
+          <option *ngFor="let m of materialesFiltradosModal" [ngValue]="m.idMaterial">{{ m.descripcion }} — {{ m.unidadMedida || m.unidad || '-' }}</option>
         </select>
       </div>
 

@@ -20,7 +20,6 @@
             <th>N° OC</th>
             <th>Fecha</th>
             <th>RQ</th>
-            <th>Proveedor</th>
             <th>Especialidad</th>
             <th>Proyecto</th>
             <th>Estado</th>
@@ -30,14 +29,13 @@
         </thead>
         <tbody>
           <tr *ngFor="let row of pendientes">
-            <td>{{ row.numeroOrdenCompra || row.NumeroOrdenCompra || '-' }}</td>
-            <td>{{ formatFechaSolo(row.fechaOrdenCompra || row.FechaOrdenCompra) }}</td>
-            <td>{{ row.numeroRequerimiento || row.NumeroRequerimiento || '-' }}</td>
-            <td>{{ row.proveedor || row.Proveedor || '-' }}</td>
-            <td>{{ row.especialidad || row.Especialidad || '-' }}</td>
-            <td>{{ row.nombreProyecto || row.NombreProyecto || '-' }}</td>
-            <td><span class="badge badge--pending">{{ row.estado || row.Estado || '-' }}</span></td>
-            <td>{{ row.total || row.Total || 0 }}</td>
+            <td>{{ row.numeroOrdenCompra || row.NumeroOrdenCompra }}</td>
+            <td>{{ (row.fechaOrdenCompra || row.FechaOrdenCompra) | date:'yyyy-MM-dd' }}</td>
+            <td>{{ row.numeroRequerimiento || row.NumeroRequerimiento }}</td>
+            <td>{{ row.especialidad || row.Especialidad }}</td>
+            <td>{{ row.nombreProyecto || row.NombreProyecto }}</td>
+            <td><span class="badge badge--pending">{{ row.estado || row.Estado }}</span></td>
+            <td>{{ (row.total || row.Total) | number:'1.2-2' }}</td>
             <td><button class="btn btn-secondary" (click)="procesarPendiente(row)">Procesar</button></td>
           </tr>
         </tbody>
@@ -59,7 +57,6 @@
               <th>Fecha</th>
               <th>OC</th>
               <th>RQ</th>
-              <th>Proveedor</th>
               <th>Especialidad</th>
               <th>Proyecto</th>
               <th>Estado</th>
@@ -69,15 +66,14 @@
           </thead>
           <tbody>
             <tr *ngFor="let row of comprasCerradas">
-              <td>{{ row.numeroCompra || row.NumeroCompra || '-' }}</td>
-              <td>{{ formatFechaSolo(row.fechaCompra || row.FechaCompra) }}</td>
-              <td>{{ row.numeroOrdenCompra || row.NumeroOrdenCompra || '-' }}</td>
-              <td>{{ row.numeroRequerimiento || row.NumeroRequerimiento || '-' }}</td>
-              <td>{{ row.proveedor || row.Proveedor || '-' }}</td>
-              <td>{{ row.especialidad || row.Especialidad || '-' }}</td>
-              <td>{{ row.nombreProyecto || row.NombreProyecto || '-' }}</td>
-              <td><span class="badge badge--pending">{{ row.estado || row.Estado || '-' }}</span></td>
-              <td>{{ row.montoTotal || row.MontoTotal || row.total || row.Total || 0 }}</td>
+              <td>{{ row.numeroCompra || row.NumeroCompra }}</td>
+              <td>{{ (row.fechaCompra || row.FechaCompra) | date:'yyyy-MM-dd' }}</td>
+              <td>{{ row.numeroOrdenCompra || row.NumeroOrdenCompra }}</td>
+              <td>{{ row.numeroRequerimiento || row.NumeroRequerimiento }}</td>
+              <td>{{ row.especialidad || row.Especialidad }}</td>
+              <td>{{ row.nombreProyecto || row.NombreProyecto }}</td>
+              <td><span class="badge badge--ok">{{ row.estado || row.Estado || 'Comprado' }}</span></td>
+              <td>{{ (row.montoTotal || row.MontoTotal || row.total || row.Total) | number:'1.2-2' }}</td>
               <td><button class="btn btn-secondary" (click)="verCompra(row)">Ver</button></td>
             </tr>
           </tbody>
@@ -87,110 +83,79 @@
   </section>
 
   <section class="panel">
-    <div class="panel-title">Detalle / cierre de compra</div>
-
-    <div *ngIf="!detalleOc && !detalleCompra" class="empty-state">
-      Selecciona una OC pendiente o una compra cerrada.
-    </div>
+    <div class="panel-title">Continuar flujo de Compra</div>
 
     <div *ngIf="detalleOc">
-      <div class="toolbar" style="margin-bottom:14px;">
-        <span class="list-chip">{{ detalleOc.ordenCompra?.numeroOrdenCompra || detalleOc.ordenCompra?.NumeroOrdenCompra }}</span>
-        <span class="list-chip">{{ detalleOc.ordenCompra?.estado || detalleOc.ordenCompra?.Estado }}</span>
-      </div>
-
-      <div class="table-wrap" *ngIf="detalleOc.items?.length">
+      <div class="table-wrap" *ngIf="itemsOc.length">
         <table>
-          <thead><tr><th>Material</th><th>Unidad</th><th>Cantidad</th></tr></thead>
+          <thead><tr><th>Material</th><th>Unidad</th><th>Cantidad</th><th>Proveedor</th><th>Precio Unit.</th><th>Subtotal</th></tr></thead>
           <tbody>
-            <tr *ngFor="let item of detalleOc.items">
-              <td>{{ item.material || item.Material }}</td>
-              <td>{{ item.unidadMedida || item.UnidadMedida }}</td>
-              <td>{{ item.cantidad || item.Cantidad }}</td>
+            <tr *ngFor="let x of itemsOc">
+              <td>{{ x.material || x.Material }}</td>
+              <td>{{ x.unidadMedida || x.UnidadMedida }}</td>
+              <td>{{ x.cantidad || x.Cantidad }}</td>
+              <td>{{ x.proveedor || x.Proveedor }}</td>
+              <td>{{ (x.precioUnitario || x.PrecioUnitario) | number:'1.2-2' }}</td>
+              <td>{{ (x.subtotal || x.Subtotal) | number:'1.2-2' }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="panel" style="margin-top:18px; padding:16px;" *ngIf="detalleOc.items?.length">
-        <div class="panel-title" style="font-size:1rem;">Precios unitarios</div>
-        <div class="form-grid two">
-          <div class="field" *ngFor="let item of detalleOc.items; let i = index" style="grid-column:1/-1;">
-            <label>{{ item.material || item.Material }}</label>
-            <input type="number" min="0" step="0.01" [(ngModel)]="detalleOc.items[i].precioUnitario">
-          </div>
-        </div>
-      </div>
-
       <div class="form-grid two" style="margin-top:18px;">
-        <div class="field"><label>Número compra</label><input [(ngModel)]="form.numeroCompra"></div>
+        <div class="field"><label>N° Compra</label><input [(ngModel)]="form.numeroCompra"></div>
         <div class="field"><label>Fecha compra</label><input type="date" [(ngModel)]="form.fechaCompra"></div>
-        <div class="field">
-          <label>Incluye IGV</label>
+        <div class="field"><label>Incluye IGV</label>
           <select [(ngModel)]="form.incluyeIgv">
             <option [ngValue]="true">Sí</option>
             <option [ngValue]="false">No</option>
           </select>
         </div>
-        <div class="field"><label>Proveedor ID</label><input type="number" [(ngModel)]="form.idProveedor" readonly></div>
-        <div class="field"><label>Subtotal sin IGV</label><input [ngModel]="subtotalSinIgvCalculado" readonly></div>
-        <div class="field"><label>Monto IGV</label><input [ngModel]="montoIgvCalculado" readonly></div>
-        <div class="field"><label>Monto total</label><input [ngModel]="montoTotalCalculado" readonly></div>
+        <div class="field"><label>Total</label><input [value]="montoTotalCalculado | number:'1.2-2'" readonly></div>
+        <div class="field" *ngIf="form.incluyeIgv"><label>Subtotal sin IGV</label><input [value]="subtotalSinIgvCalculado | number:'1.2-2'" readonly></div>
+        <div class="field" *ngIf="form.incluyeIgv"><label>Monto IGV</label><input [value]="montoIgvCalculado | number:'1.2-2'" readonly></div>
         <div class="field" style="grid-column:1/-1;"><label>Observación</label><textarea [(ngModel)]="form.observacion"></textarea></div>
+        <div class="field" style="grid-column:1/-1;">
+          <label>Adjuntar PDFs</label>
+          <input #fileInput type="file" multiple accept=".pdf,application/pdf" (change)="onFilesSelected($event)">
+          <div style="margin-top:8px; color:#6b7280;" *ngIf="selectedFiles.length">
+            {{ selectedFiles.length }} archivo(s) PDF seleccionados.
+          </div>
+        </div>
       </div>
 
-      <div class="panel" style="margin-top:18px; padding:16px;">
-        <div class="panel-title" style="font-size:1rem;">Adjuntar PDFs</div>
-        <input type="file" multiple accept=".pdf,application/pdf" (change)="onFilesSelected($event)">
-        <div class="toolbar" style="margin-top:12px;">
-          <button class="btn btn-primary" (click)="registrarCompra()">Registrar compra y subir documentos</button>
-          <button class="btn btn-ghost" (click)="resetForm()">Limpiar</button>
-        </div>
+      <div class="toolbar" style="margin-top:14px;">
+        <button class="btn btn-primary" (click)="registrarCompra()">Registrar compra</button>
       </div>
     </div>
 
     <div *ngIf="detalleCompra">
-      <div class="toolbar" style="margin-bottom:14px;">
-        <span class="list-chip">{{ detalleCompra.compra?.numeroCompra || detalleCompra.compra?.NumeroCompra || detalleCompra.numeroCompra || detalleCompra.NumeroCompra }}</span>
-        <span class="list-chip">{{ detalleCompra.compra?.estado || detalleCompra.compra?.Estado || detalleCompra.estado || detalleCompra.Estado }}</span>
-      </div>
-
-      <div class="table-wrap" *ngIf="detalleCompra.items?.length">
+      <div class="table-wrap">
         <table>
-          <thead><tr><th>Material</th><th>Unidad</th><th>Cantidad</th></tr></thead>
+          <thead><tr><th>Material</th><th>Unidad</th><th>Cantidad</th><th>Proveedor</th><th>Precio Unit.</th><th>Subtotal</th></tr></thead>
           <tbody>
-            <tr *ngFor="let item of detalleCompra.items">
-              <td>{{ item.material || item.Material }}</td>
-              <td>{{ item.unidadMedida || item.UnidadMedida }}</td>
-              <td>{{ item.cantidad || item.Cantidad }}</td>
+            <tr *ngFor="let x of detalleCompra.items">
+              <td>{{ x.material || x.Material }}</td>
+              <td>{{ x.unidadMedida || x.UnidadMedida }}</td>
+              <td>{{ x.cantidad || x.Cantidad }}</td>
+              <td>{{ x.proveedor || x.Proveedor }}</td>
+              <td>{{ (x.precioUnitario || x.PrecioUnitario) | number:'1.2-2' }}</td>
+              <td>{{ (x.subtotal || x.Subtotal) | number:'1.2-2' }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="panel" style="margin-top:18px; padding:16px;">
-        <div class="panel-title" style="font-size:1rem;">Documentos subidos</div>
-
-        <div *ngIf="!documentos.length" class="empty-state">
-          No hay documentos adjuntos.
-        </div>
-
-        <div *ngIf="documentos.length" class="table-wrap">
-          <table>
-            <thead><tr><th>Archivo</th><th>Extensión</th><th>Fecha</th><th>Ruta</th></tr></thead>
-            <tbody>
-              <tr *ngFor="let d of documentos">
-                <td>{{ d.nombreArchivo || d.NombreArchivo }}</td>
-                <td>{{ d.extension || d.Extension }}</td>
-                <td>{{ formatFechaSolo(d.fechaCreacion || d.FechaCreacion) }}</td>
-                <td>{{ d.rutaArchivo || d.RutaArchivo }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <div class="panel" style="margin-top:18px; padding:16px;" *ngIf="documentos.length">
+        <div class="panel-title" style="font-size:1rem;">Documentos adjuntos</div>
+        <ul style="margin:0; padding-left:18px;">
+          <li *ngFor="let d of documentos">
+            {{ d.nombreArchivo || d.NombreArchivo || d.rutaArchivo || d.RutaArchivo }}
+          </li>
+        </ul>
       </div>
     </div>
 
-    <div *ngIf="msg" class="empty-state" style="margin-top:14px; padding:14px;">{{ msg }}</div>
+    <div *ngIf="msg" class="empty-state" style="margin-top:14px;">{{ msg }}</div>
   </section>
 </div>

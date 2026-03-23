@@ -80,6 +80,7 @@ export class OrdenesCompraPage implements OnInit {
           material: it.material,
           unidadMedida: it.unidadMedida,
           cantidad: Number(it.cantidad),
+          idProveedor: null,
           precioUnitario: 0
         }));
 
@@ -109,7 +110,7 @@ export class OrdenesCompraPage implements OnInit {
     const dto = {
       numeroOrdenCompra: (this.form.numeroOrdenCompra || '').trim(),
       idRequerimiento: Number(this.form.idRequerimiento),
-      idProveedor: Number(this.form.idProveedor),
+      idProveedor: Number((this.form.items || []).find((x: any) => Number(x.idProveedor))?.idProveedor || 0),
       idProyecto: Number(this.form.idProyecto),
       fechaOrdenCompra: this.form.fechaOrdenCompra,
       descripcion: this.form.descripcion || '',
@@ -118,16 +119,17 @@ export class OrdenesCompraPage implements OnInit {
       items: (this.form.items || []).map((x: any) => ({
         idMaterial: Number(x.idMaterial),
         cantidad: Number(x.cantidad),
+        idProveedor: Number(x.idProveedor || 0),
         precioUnitario: Number(x.precioUnitario || 0)
       }))
     };
 
     if (!dto.idRequerimiento) { this.msg = 'Debes seleccionar un RQ enviado a OC.'; return; }
     if (!dto.numeroOrdenCompra) { this.msg = 'Debes ingresar el número de orden.'; return; }
-    if (!dto.idProveedor) { this.msg = 'Debes seleccionar proveedor.'; return; }
     if (!dto.idProyecto) { this.msg = 'Debes seleccionar proyecto.'; return; }
     if (!dto.fechaOrdenCompra) { this.msg = 'Debes ingresar la fecha.'; return; }
     if (!dto.items.length) { this.msg = 'La orden debe tener items.'; return; }
+    if (dto.items.some((x: any) => !x.idProveedor)) { this.msg = 'Debes seleccionar proveedor por cada material.'; return; }
 
     this.compras.crearOrden(dto).subscribe({
       next: () => {

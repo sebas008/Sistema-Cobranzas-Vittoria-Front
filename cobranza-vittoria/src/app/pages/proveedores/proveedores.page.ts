@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { forkJoin, of } from 'rxjs';
 import { NotificationService } from '../../core/services/notification.service';
 
 import { MaestraService } from '../../core/services/maestra.service';
@@ -15,10 +14,6 @@ import { MaestraService } from '../../core/services/maestra.service';
 })
 export class ProveedoresPage implements OnInit {
   rows: any[] = [];
-  especialidades: any[] = [];
-  especialidadesSeleccionadas: number[] = [];
-  especialidadesProveedor: any[] = [];
-  filtroEspecialidad: number | null = null;
   msg = '';
 
   form: any = {
@@ -42,12 +37,11 @@ export class ProveedoresPage implements OnInit {
   constructor(private maestra: MaestraService, private notifyService: NotificationService) {}
 
   ngOnInit() {
-    this.maestra.especialidades(true).subscribe(x => (this.especialidades = x || []));
     this.load();
   }
 
   load() {
-    this.maestra.proveedores(undefined, this.filtroEspecialidad).subscribe(x => {
+    this.maestra.proveedores().subscribe(x => {
       this.rows = x || [];
     });
   }
@@ -72,11 +66,6 @@ export class ProveedoresPage implements OnInit {
         activo: res?.proveedor?.activo ?? true
       };
 
-      this.especialidadesProveedor = res?.especialidades || [];
-      this.especialidadesSeleccionadas = this.especialidadesProveedor
-        .filter((x: any) => x.activo)
-        .map((x: any) => x.idEspecialidad);
-
       this.msg = '';
     });
   }
@@ -100,8 +89,6 @@ export class ProveedoresPage implements OnInit {
       activo: true
     };
 
-    this.especialidadesSeleccionadas = [];
-    this.especialidadesProveedor = [];
     this.msg = '';
   }
 
@@ -114,63 +101,13 @@ export class ProveedoresPage implements OnInit {
           this.form.idProveedor = idProveedor;
         }
 
-        this.msg = this.form.idProveedor
-          ? 'Proveedor guardado correctamente. Ahora puedes guardar sus especialidades.'
-          : 'Proveedor guardado correctamente.';
-
+        this.msg = 'Proveedor guardado correctamente.';
         this.notifyService.show(this.msg, 'success');
 
         this.load();
       },
       error: e => {
         this.msg = e?.error?.message || 'No se pudo guardar el proveedor.';
-        this.notifyService.show(this.msg, 'error');
-      }
-    });
-  }
-
-  onEspecialidadToggle(idEspecialidad: number, checked: boolean) {
-    if (checked) {
-      if (!this.especialidadesSeleccionadas.includes(idEspecialidad)) {
-        this.especialidadesSeleccionadas = [...this.especialidadesSeleccionadas, idEspecialidad];
-      }
-      return;
-    }
-
-    this.especialidadesSeleccionadas = this.especialidadesSeleccionadas.filter(x => x !== idEspecialidad);
-  }
-
-  guardarEspecialidadesProveedor() {
-    if (!this.form.idProveedor) {
-      this.msg = 'Primero debes guardar el proveedor.';
-      return;
-    }
-
-    if (!this.especialidades.length) {
-      this.msg = 'No hay especialidades disponibles.';
-      return;
-    }
-
-    const requests = this.especialidades.map((e: any) =>
-      this.maestra.setProveedorEspecialidad(this.form.idProveedor, {
-        idEspecialidad: e.idEspecialidad,
-        activo: this.especialidadesSeleccionadas.includes(e.idEspecialidad)
-      })
-    );
-
-    if (!requests.length) {
-      this.msg = 'No hay especialidades para procesar.';
-      return;
-    }
-
-    forkJoin(requests.length ? requests : [of(null)]).subscribe({
-      next: () => {
-        this.msg = 'Especialidades actualizadas correctamente.';
-        this.notifyService.show(this.msg, 'success');
-        this.load();
-      },
-      error: e => {
-        this.msg = e?.error?.message || 'No se pudieron actualizar las especialidades.';
         this.notifyService.show(this.msg, 'error');
       }
     });

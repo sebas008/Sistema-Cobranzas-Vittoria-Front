@@ -51,6 +51,8 @@ export class ValorizacionesPage implements OnInit {
     numeroFactura: '',
     montoFactura: null,
     descripcion: '',
+    aplicaDetraccion: false,
+    aplicaGarantia: true,
     otrosDescuentos: 0,
     fechaTransferencia: '',
     numeroOperacion: '',
@@ -72,6 +74,52 @@ export class ValorizacionesPage implements OnInit {
     this.cargarCatalogos();
     this.cargarConfiguraciones();
     this.cargarValorizaciones();
+  }
+
+  get configuracionSeleccionada(): any {
+    const id = this.formValorizacion.idConfiguracion || this.cabecera?.idConfiguracion;
+    return this.configuraciones.find((x: any) => x.idConfiguracion === id) || null;
+  }
+
+  get monedaActual(): string {
+    return this.cabecera?.moneda || this.configuracionSeleccionada?.moneda || this.formConfiguracion.moneda || 'PEN';
+  }
+
+  get porcentajeGarantiaActual(): number {
+    return Number(this.cabecera?.porcentajeGarantia ?? this.configuracionSeleccionada?.porcentajeGarantia ?? 0.05);
+  }
+
+  get porcentajeDetraccionActual(): number {
+    return Number(this.cabecera?.porcentajeDetraccion ?? this.configuracionSeleccionada?.porcentajeDetraccion ?? 0.04);
+  }
+
+  get detraccionHabilitadaPorMonto(): boolean {
+    return Number(this.formDetalle.montoFactura || 0) >= 700;
+  }
+
+  get porcentajeDetraccionAplicado(): number {
+    return this.formDetalle.aplicaDetraccion && this.detraccionHabilitadaPorMonto ? this.porcentajeDetraccionActual : 0;
+  }
+
+  get porcentajeGarantiaAplicado(): number {
+    return this.formDetalle.aplicaGarantia ? this.porcentajeGarantiaActual : 0;
+  }
+
+  get montoDetraccionCalculado(): number {
+    return this.redondear(Number(this.formDetalle.montoFactura || 0) * this.porcentajeDetraccionAplicado);
+  }
+
+  get montoGarantiaCalculado(): number {
+    return this.redondear(Number(this.formDetalle.montoFactura || 0) * this.porcentajeGarantiaAplicado);
+  }
+
+  get montoAAbonarCalculado(): number {
+    return this.redondear(
+      Number(this.formDetalle.montoFactura || 0)
+      - this.montoDetraccionCalculado
+      - this.montoGarantiaCalculado
+      - Number(this.formDetalle.otrosDescuentos || 0)
+    );
   }
 
   cargarCatalogos(): void {
@@ -155,7 +203,7 @@ export class ValorizacionesPage implements OnInit {
     };
     this.detalle = [];
     this.resumen = null;
-    this.formDetalle.idValorizacion = null;
+    this.formDetalle = this.detalleVacio();
   }
 
   guardarValorizacion(): void {
@@ -197,21 +245,7 @@ export class ValorizacionesPage implements OnInit {
           usuario: 'system'
         };
 
-        this.formDetalle = {
-          idDetalle: null,
-          idValorizacion: idValorizacion,
-          fechaFactura: '',
-          numeroFactura: '',
-          montoFactura: null,
-          descripcion: '',
-          otrosDescuentos: 0,
-          fechaTransferencia: '',
-          numeroOperacion: '',
-          bancoTransferencia: '',
-          bancoDestino: '',
-          montoTransferido: 0,
-          usuario: 'system'
-        };
+        this.formDetalle = this.detalleVacio(idValorizacion);
       },
       error: e => this.msg = e?.error?.message || 'No se pudo obtener la valorización.',
       complete: () => this.cargando = false
@@ -227,6 +261,8 @@ export class ValorizacionesPage implements OnInit {
       numeroFactura: d.numeroFactura || '',
       montoFactura: d.montoFactura,
       descripcion: d.descripcion || '',
+      aplicaDetraccion: Number(d.detraccion || 0) > 0,
+      aplicaGarantia: Number(d.garantia || 0) > 0,
       otrosDescuentos: d.otrosDescuentos || 0,
       fechaTransferencia: this.toDateInput(d.fechaTransferencia),
       numeroOperacion: d.numeroOperacion || '',
@@ -237,6 +273,16 @@ export class ValorizacionesPage implements OnInit {
     };
   }
 
+  onMontoFacturaChange(): void {
+    if (!this.detraccionHabilitadaPorMonto) {
+      this.formDetalle.aplicaDetraccion = false;
+      return;
+    }
+    if (!this.formDetalle.idDetalle) {
+      this.formDetalle.aplicaDetraccion = true;
+    }
+  }
+
   guardarDetalle(): void {
     if (!this.formValorizacion.idValorizacion) {
       this.msg = 'Primero guarda o selecciona una valorización.';
@@ -245,7 +291,11 @@ export class ValorizacionesPage implements OnInit {
 
     this.formDetalle.idValorizacion = this.formValorizacion.idValorizacion;
     this.msg = '';
-    this.valorizaciones.guardarDetalle(this.formDetalle).subscribe({
+    this.valorizaciones.guardarDetalle({
+      ...this.formDetalle,
+      porcentajeDetraccionAplicado: this.porcentajeDetraccionAplicado,
+      porcentajeGarantiaAplicado: this.porcentajeGarantiaAplicado
+    }).subscribe({
       next: () => {
         this.msg = 'Detalle guardado correctamente.';
         this.ver(this.formValorizacion.idValorizacion);
@@ -278,26 +328,18 @@ export class ValorizacionesPage implements OnInit {
       observacion: '',
       usuario: 'system'
     };
-    this.formDetalle = {
-      idDetalle: null,
-      idValorizacion: null,
-      fechaFactura: '',
-      numeroFactura: '',
-      montoFactura: null,
-      descripcion: '',
-      otrosDescuentos: 0,
-      fechaTransferencia: '',
-      numeroOperacion: '',
-      bancoTransferencia: '',
-      bancoDestino: '',
-      montoTransferido: 0,
-      usuario: 'system'
-    };
+    this.formDetalle = this.detalleVacio();
   }
 
-  formatMoney(value: any): string {
+  formatMoney(value: any, moneda?: string): string {
     const number = Number(value || 0);
-    return new Intl.NumberFormat('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(number);
+    const code = (moneda || this.monedaActual || 'PEN').toUpperCase() === 'USD' ? 'USD' : 'PEN';
+    return new Intl.NumberFormat('es-PE', {
+      style: 'currency',
+      currency: code,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(number);
   }
 
   formatPct(value: any): string {
@@ -308,6 +350,30 @@ export class ValorizacionesPage implements OnInit {
   private defaultPeriodo(): string {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  private detalleVacio(idValorizacion: number | null = null): any {
+    return {
+      idDetalle: null,
+      idValorizacion,
+      fechaFactura: '',
+      numeroFactura: '',
+      montoFactura: null,
+      descripcion: '',
+      aplicaDetraccion: false,
+      aplicaGarantia: true,
+      otrosDescuentos: 0,
+      fechaTransferencia: '',
+      numeroOperacion: '',
+      bancoTransferencia: '',
+      bancoDestino: '',
+      montoTransferido: 0,
+      usuario: 'system'
+    };
+  }
+
+  private redondear(value: number): number {
+    return Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
   }
 
   private mapConfiguracion(x: any): any {
@@ -325,8 +391,8 @@ export class ValorizacionesPage implements OnInit {
       servicio: x?.servicio ?? x?.Servicio ?? '',
       moneda: x?.moneda ?? x?.Moneda ?? 'PEN',
       montoCotizacion: Number(x?.montoCotizacion ?? x?.MontoCotizacion ?? 0),
-      porcentajeGarantia: Number(x?.porcentajeGarantia ?? x?.PorcentajeGarantia ?? 0),
-      porcentajeDetraccion: Number(x?.porcentajeDetraccion ?? x?.PorcentajeDetraccion ?? 0)
+      porcentajeGarantia: Number(x?.porcentajeGarantia ?? x?.PorcentajeGarantia ?? 0.05),
+      porcentajeDetraccion: Number(x?.porcentajeDetraccion ?? x?.PorcentajeDetraccion ?? 0.04)
     };
   }
 
@@ -340,7 +406,14 @@ export class ValorizacionesPage implements OnInit {
       razonSocial: x?.razonSocial ?? x?.Proveedor ?? x?.proveedor ?? '',
       especialidad: x?.especialidad ?? x?.nombreEspecialidad ?? x?.Especialidad ?? '',
       nombreEspecialidad: x?.nombreEspecialidad ?? x?.Especialidad ?? x?.especialidad ?? '',
-      montoCotizacion: Number(x?.montoCotizacion ?? x?.Cotizacion ?? 0)
+      moneda: x?.moneda ?? x?.Moneda ?? 'PEN',
+      montoCotizacion: Number(x?.montoCotizacion ?? x?.Cotizacion ?? 0),
+      porcentajeGarantia: Number(x?.porcentajeGarantia ?? x?.PorcentajeGarantia ?? 0.05),
+      porcentajeDetraccion: Number(x?.porcentajeDetraccion ?? x?.PorcentajeDetraccion ?? 0.04),
+      facturado: Number(x?.facturado ?? x?.Facturado ?? 0),
+      transferido: Number(x?.transferido ?? x?.Transferido ?? 0),
+      garantiaRetenida: Number(x?.garantiaRetenida ?? x?.GarantiaRetenida ?? 0),
+      detraccionAcumulada: Number(x?.detraccionAcumulada ?? x?.DetraccionAcumulada ?? 0)
     };
   }
 
@@ -355,10 +428,10 @@ export class ValorizacionesPage implements OnInit {
       proveedor: x?.proveedor ?? x?.razonSocial ?? x?.Proveedor ?? '',
       especialidad: x?.especialidad ?? x?.nombreEspecialidad ?? x?.Especialidad ?? '',
       servicio: x?.servicio ?? x?.Servicio ?? '',
-      moneda: x?.moneda ?? x?.Moneda ?? '',
+      moneda: x?.moneda ?? x?.Moneda ?? 'PEN',
       montoCotizacion: Number(x?.montoCotizacion ?? x?.Cotizacion ?? 0),
-      porcentajeGarantia: Number(x?.porcentajeGarantia ?? x?.PorcentajeGarantia ?? 0),
-      porcentajeDetraccion: Number(x?.porcentajeDetraccion ?? x?.PorcentajeDetraccion ?? 0)
+      porcentajeGarantia: Number(x?.porcentajeGarantia ?? x?.PorcentajeGarantia ?? 0.05),
+      porcentajeDetraccion: Number(x?.porcentajeDetraccion ?? x?.PorcentajeDetraccion ?? 0.04)
     };
   }
 
@@ -393,11 +466,17 @@ export class ValorizacionesPage implements OnInit {
     if (!x) return null;
     return {
       cotizacion: Number(x?.cotizacion ?? x?.Cotizacion ?? 0),
-      garantia: Number(x?.garantia ?? x?.Garantia ?? 0),
+      porcentajeGarantia: Number(x?.porcentajeGarantia ?? x?.PorcentajeGarantia ?? 0.05),
+      porcentajeDetraccion: Number(x?.porcentajeDetraccion ?? x?.PorcentajeDetraccion ?? 0.04),
       facturado: Number(x?.facturado ?? x?.Facturado ?? 0),
       transferido: Number(x?.transferido ?? x?.Transferido ?? 0),
+      garantiaRetenida: Number(x?.garantiaRetenida ?? x?.GarantiaRetenida ?? x?.garantia ?? x?.Garantia ?? 0),
+      detraccionAcumulada: Number(x?.detraccionAcumulada ?? x?.DetraccionAcumulada ?? 0),
+      otrosDescuentos: Number(x?.otrosDescuentos ?? x?.OtrosDescuentos ?? 0),
       resta: Number(x?.resta ?? x?.Resta ?? 0),
-      liquidar: Number(x?.liquidar ?? x?.Liquidar ?? 0)
+      liquidar: Number(x?.liquidar ?? x?.Liquidar ?? 0),
+      aFavor: Number(x?.aFavor ?? x?.AFavor ?? 0),
+      deuda: Number(x?.deuda ?? x?.Deuda ?? 0)
     };
   }
 
