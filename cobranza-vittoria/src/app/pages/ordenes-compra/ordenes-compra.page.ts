@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ComprasService } from '../../core/services/compras.service';
@@ -38,7 +38,8 @@ export class OrdenesCompraPage implements OnInit {
   constructor(
     private compras: ComprasService,
     private maestra: MaestraService,
-    private seguridad: SeguridadService
+    private seguridad: SeguridadService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -48,20 +49,20 @@ export class OrdenesCompraPage implements OnInit {
 
   load() {
     this.compras.requerimientos({ estado: 'EnviadoOC' }).subscribe({
-      next: (x: any) => this.rqPendientesOc = x || [],
-      error: () => this.rqPendientesOc = []
+      next: (x: any) => { this.rqPendientesOc = x || []; this.cdr.detectChanges(); },
+      error: () => { this.rqPendientesOc = []; this.cdr.detectChanges(); }
     });
 
     this.compras.ordenes().subscribe({
-      next: (x: any) => this.ordenesCreadas = x || [],
-      error: () => this.ordenesCreadas = []
+      next: (x: any) => { this.ordenesCreadas = x || []; this.cdr.detectChanges(); },
+      error: () => { this.ordenesCreadas = []; this.cdr.detectChanges(); }
     });
   }
 
   loadCatalogos() {
-    this.maestra.proveedores(true).subscribe({ next: (x: any) => this.proveedores = x || [], error: () => this.proveedores = [] });
-    this.maestra.proyectos(true).subscribe({ next: (x: any) => this.proyectos = x || [], error: () => this.proyectos = [] });
-    this.seguridad.usuarios().subscribe({ next: (x: any) => this.usuarios = x || [], error: () => this.usuarios = [] });
+    this.maestra.proveedores(true).subscribe({ next: (x: any) => { this.proveedores = x || []; this.cdr.detectChanges(); }, error: () => { this.proveedores = []; this.cdr.detectChanges(); } });
+    this.maestra.proyectos(true).subscribe({ next: (x: any) => { this.proyectos = x || []; this.cdr.detectChanges(); }, error: () => { this.proyectos = []; this.cdr.detectChanges(); } });
+    this.seguridad.usuarios().subscribe({ next: (x: any) => { this.usuarios = x || []; this.cdr.detectChanges(); }, error: () => { this.usuarios = []; this.cdr.detectChanges(); } });
   }
 
   procesarRq(row: any) {
@@ -85,10 +86,12 @@ export class OrdenesCompraPage implements OnInit {
         }));
 
         this.msg = 'RQ cargado para continuar flujo de OC.';
+        this.cdr.detectChanges();
       },
       error: () => {
         this.detalleRq = null;
         this.msg = 'No se pudo cargar el requerimiento.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -98,10 +101,12 @@ export class OrdenesCompraPage implements OnInit {
       next: (x: any) => {
         this.detalleOc = x;
         this.detalleRq = null;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.detalleOc = null;
         this.msg = 'No se pudo cargar la orden.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -136,8 +141,9 @@ export class OrdenesCompraPage implements OnInit {
         this.msg = 'Orden creada correctamente.';
         this.resetFormulario();
         this.load();
+        this.cdr.detectChanges();
       },
-      error: (e: any) => { this.msg = e?.error?.message || 'No se pudo guardar la orden.'; }
+      error: (e: any) => { this.msg = e?.error?.message || 'No se pudo guardar la orden.'; this.cdr.detectChanges(); }
     });
   }
 

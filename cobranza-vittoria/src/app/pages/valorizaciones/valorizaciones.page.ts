@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -67,7 +67,8 @@ export class ValorizacionesPage implements OnInit {
 
   constructor(
     private maestra: MaestraService,
-    private valorizaciones: ValorizacionesService
+    private valorizaciones: ValorizacionesService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -123,22 +124,22 @@ export class ValorizacionesPage implements OnInit {
   }
 
   cargarCatalogos(): void {
-    this.maestra.proyectos(true).subscribe(x => this.proyectos = x || []);
-    this.maestra.proveedores(true).subscribe(x => this.proveedores = x || []);
-    this.maestra.especialidades(true).subscribe(x => this.especialidades = x || []);
+    this.maestra.proyectos(true).subscribe(x => { this.proyectos = x || []; this.cdr.detectChanges(); });
+    this.maestra.proveedores(true).subscribe(x => { this.proveedores = x || []; this.cdr.detectChanges(); });
+    this.maestra.especialidades(true).subscribe(x => { this.especialidades = x || []; this.cdr.detectChanges(); });
   }
 
   cargarConfiguraciones(): void {
     this.valorizaciones.configuraciones(this.filtros).subscribe({
-      next: x => this.configuraciones = (x || []).map((r: any) => this.mapConfiguracion(r)),
-      error: e => this.msg = e?.error?.message || 'No se pudo listar configuraciones.'
+      next: x => { this.configuraciones = (x || []).map((r: any) => this.mapConfiguracion(r)); this.cdr.detectChanges(); },
+      error: e => { this.msg = e?.error?.message || 'No se pudo listar configuraciones.'; this.cdr.detectChanges(); }
     });
   }
 
   cargarValorizaciones(): void {
     this.valorizaciones.valorizaciones(this.filtros).subscribe({
-      next: x => this.rows = (x || []).map((r: any) => this.mapValorizacion(r)),
-      error: e => this.msg = e?.error?.message || 'No se pudo listar valorizaciones.'
+      next: x => { this.rows = (x || []).map((r: any) => this.mapValorizacion(r)); this.cdr.detectChanges(); },
+      error: e => { this.msg = e?.error?.message || 'No se pudo listar valorizaciones.'; this.cdr.detectChanges(); }
     });
   }
 
@@ -177,8 +178,9 @@ export class ValorizacionesPage implements OnInit {
           usuario: 'system'
         };
         this.cargarConfiguraciones();
+        this.cdr.detectChanges();
       },
-      error: e => this.msg = e?.error?.message || 'No se pudo guardar la configuración.'
+      error: e => { this.msg = e?.error?.message || 'No se pudo guardar la configuración.'; this.cdr.detectChanges(); }
     });
   }
 
@@ -223,8 +225,9 @@ export class ValorizacionesPage implements OnInit {
           this.ver(idValorizacion);
         }
         this.cargarValorizaciones();
+        this.cdr.detectChanges();
       },
-      error: e => this.msg = e?.error?.message || 'No se pudo guardar la valorización.'
+      error: e => { this.msg = e?.error?.message || 'No se pudo guardar la valorización.'; this.cdr.detectChanges(); }
     });
   }
 
@@ -246,9 +249,10 @@ export class ValorizacionesPage implements OnInit {
         };
 
         this.formDetalle = this.detalleVacio(idValorizacion);
+        this.cdr.detectChanges();
       },
-      error: e => this.msg = e?.error?.message || 'No se pudo obtener la valorización.',
-      complete: () => this.cargando = false
+      error: e => { this.msg = e?.error?.message || 'No se pudo obtener la valorización.'; this.cdr.detectChanges(); },
+      complete: () => { this.cargando = false; this.cdr.detectChanges(); }
     });
   }
 
@@ -299,8 +303,9 @@ export class ValorizacionesPage implements OnInit {
       next: () => {
         this.msg = 'Detalle guardado correctamente.';
         this.ver(this.formValorizacion.idValorizacion);
+        this.cdr.detectChanges();
       },
-      error: e => this.msg = e?.error?.message || 'No se pudo guardar el detalle.'
+      error: e => { this.msg = e?.error?.message || 'No se pudo guardar el detalle.'; this.cdr.detectChanges(); }
     });
   }
 
@@ -312,8 +317,9 @@ export class ValorizacionesPage implements OnInit {
       next: () => {
         this.msg = 'Detalle eliminado correctamente.';
         if (this.formValorizacion.idValorizacion) this.ver(this.formValorizacion.idValorizacion);
+        this.cdr.detectChanges();
       },
-      error: e => this.msg = e?.error?.message || 'No se pudo eliminar el detalle.'
+      error: e => { this.msg = e?.error?.message || 'No se pudo eliminar el detalle.'; this.cdr.detectChanges(); }
     });
   }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ComprasService } from '../../core/services/compras.service';
@@ -30,19 +30,19 @@ export class ComprasPage implements OnInit {
     observacion: ''
   };
 
-  constructor(private compras: ComprasService) {}
+  constructor(private compras: ComprasService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() { this.load(); }
 
   load() {
     this.compras.pendientesCompra().subscribe({
-      next: (x: any) => this.pendientes = x || [],
-      error: () => this.pendientes = []
+      next: (x: any) => { this.pendientes = x || []; this.cdr.detectChanges(); },
+      error: () => { this.pendientes = []; this.cdr.detectChanges(); }
     });
 
     this.compras.compras().subscribe({
-      next: (x: any) => this.comprasCerradas = x || [],
-      error: () => this.comprasCerradas = []
+      next: (x: any) => { this.comprasCerradas = x || []; this.cdr.detectChanges(); },
+      error: () => { this.comprasCerradas = []; this.cdr.detectChanges(); }
     });
   }
 
@@ -65,10 +65,12 @@ export class ComprasPage implements OnInit {
         this.selectedFiles = [];
         if (this.fileInput?.nativeElement) this.fileInput.nativeElement.value = '';
         this.msg = 'OC cargada para continuar el flujo de compra.';
+        this.cdr.detectChanges();
       },
       error: () => {
         this.detalleOc = null;
         this.msg = 'No se pudo cargar la OC pendiente.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -82,10 +84,12 @@ export class ComprasPage implements OnInit {
         this.documentos = x?.documentos || [];
         this.selectedFiles = [];
         if (this.fileInput?.nativeElement) this.fileInput.nativeElement.value = '';
+        this.cdr.detectChanges();
       },
       error: () => {
         this.detalleCompra = null;
         this.msg = 'No se pudo cargar la compra.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -162,16 +166,19 @@ export class ComprasPage implements OnInit {
             this.msg = 'Compra registrada y documentos subidos correctamente.';
             this.resetForm();
             this.load();
+            this.cdr.detectChanges();
           },
           error: (e: any) => {
             this.msg = e?.error?.message || 'La compra se registró, pero falló la subida de documentos.';
             this.resetForm();
             this.load();
+            this.cdr.detectChanges();
           }
         });
       },
       error: (e: any) => {
         this.msg = e?.error?.message || 'No se pudo registrar la compra.';
+        this.cdr.detectChanges();
       }
     });
   }

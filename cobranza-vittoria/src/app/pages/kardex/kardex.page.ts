@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { KardexService } from '../../core/services/kardex.service';
@@ -38,12 +38,13 @@ export class KardexPage implements OnInit {
 
   constructor(
     private kardex: KardexService,
-    private maestra: MaestraService
+    private maestra: MaestraService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
-    this.maestra.materiales(true).subscribe({ next: (x: any) => this.materiales = x ?? [], error: () => this.materiales = [] });
-    this.maestra.especialidades(true).subscribe({ next: (x: any) => this.especialidades = x ?? [], error: () => this.especialidades = [] });
+    this.maestra.materiales(true).subscribe({ next: (x: any) => { this.materiales = x ?? []; this.cdr.detectChanges(); }, error: () => { this.materiales = []; this.cdr.detectChanges(); } });
+    this.maestra.especialidades(true).subscribe({ next: (x: any) => { this.especialidades = x ?? []; this.cdr.detectChanges(); }, error: () => { this.especialidades = []; this.cdr.detectChanges(); } });
     this.salida.fechaMovimiento = new Date().toISOString().slice(0, 10);
     this.load();
   }
@@ -81,11 +82,13 @@ export class KardexPage implements OnInit {
         }
 
         this.comprasRealizadas = Array.from(map.values()).sort((a: any, b: any) => b.idCompra - a.idCompra);
+        this.cdr.detectChanges();
       },
       error: () => {
         this.rows = [];
         this.rowsAgrupadas = [];
         this.comprasRealizadas = [];
+        this.cdr.detectChanges();
       }
     });
   }
@@ -120,9 +123,11 @@ export class KardexPage implements OnInit {
         };
         this.materialesCompraSeleccionada = [];
         this.load();
+        this.cdr.detectChanges();
       },
       error: (e: any) => {
         this.msg = e?.error?.message || 'No se pudo registrar la salida.';
+        this.cdr.detectChanges();
       }
     });
   }

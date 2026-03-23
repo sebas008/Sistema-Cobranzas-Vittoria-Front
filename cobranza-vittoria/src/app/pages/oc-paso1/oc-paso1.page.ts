@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -47,7 +47,8 @@ export class OcPaso1Page implements OnInit {
     private catalogos: CatalogosService,
     private req: RequerimientosService,
     private cot: CotizacionesService,
-    private oc: OrdenesCompraService
+    private oc: OrdenesCompraService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -55,13 +56,13 @@ export class OcPaso1Page implements OnInit {
   }
 
   cargarCatalogos() {
-    this.catalogos.categorias().subscribe(x => (this.categorias = x));
-    this.catalogos.proveedores().subscribe(x => (this.proveedores = x));
+    this.catalogos.categorias().subscribe(x => { this.categorias = x; this.cdr.detectChanges(); });
+    this.catalogos.proveedores().subscribe(x => { this.proveedores = x; this.cdr.detectChanges(); });
     this.cargarMateriales();
   }
 
   cargarMateriales() {
-    this.catalogos.materiales(this.idCategoria).subscribe(x => (this.materiales = x));
+    this.catalogos.materiales(this.idCategoria).subscribe(x => { this.materiales = x; this.cdr.detectChanges(); });
   }
 
   addItem() {
@@ -87,8 +88,9 @@ export class OcPaso1Page implements OnInit {
       next: r => {
         this.idRequerimiento = r.idRequerimiento;
         this.msg = `✅ Requerimiento creado: ${this.idRequerimiento}`;
+        this.cdr.detectChanges();
       },
-      error: e => (this.msg = `❌ Error: ${e?.error?.message || e.message}`)
+      error: e => { this.msg = `❌ Error: ${e?.error?.message || e.message}`; this.cdr.detectChanges(); }
     });
   }
 
@@ -108,8 +110,9 @@ export class OcPaso1Page implements OnInit {
       next: r => {
         this.idCotizacion = r.idCotizacion;
         this.msg = `✅ Cotización creada: ${this.idCotizacion}`;
+        this.cdr.detectChanges();
       },
-      error: e => (this.msg = `❌ Error: ${e?.error?.message || e.message}`)
+      error: e => { this.msg = `❌ Error: ${e?.error?.message || e.message}`; this.cdr.detectChanges(); }
     });
   }
 
@@ -120,16 +123,17 @@ export class OcPaso1Page implements OnInit {
       next: r => {
         this.idOrdenCompra = r.idOrdenCompra;
         this.msg = `✅ OC generada: ${this.idOrdenCompra} | Total: ${r.total}`;
+        this.cdr.detectChanges();
       },
-      error: e => (this.msg = `❌ Error: ${e?.error?.message || e.message}`)
+      error: e => { this.msg = `❌ Error: ${e?.error?.message || e.message}`; this.cdr.detectChanges(); }
     });
   }
 
   verOC() {
     if (!this.idOrdenCompra) return;
     this.oc.obtener(this.idOrdenCompra).subscribe({
-      next: r => (this.ocDetalle = r),
-      error: e => (this.msg = `❌ Error: ${e?.error?.message || e.message}`)
+      next: r => { this.ocDetalle = r; this.cdr.detectChanges(); },
+      error: e => { this.msg = `❌ Error: ${e?.error?.message || e.message}`; this.cdr.detectChanges(); }
     });
   }
 }
