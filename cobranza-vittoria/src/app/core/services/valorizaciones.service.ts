@@ -5,7 +5,7 @@ import { ApiService } from './api.service';
 export class ValorizacionesService {
   constructor(private api: ApiService) {}
 
-  configuraciones(filters?: { idProyecto?: number | null; idProveedor?: number | null; idEspecialidad?: number | null }) {
+  configuraciones(filters?: any) {
     const params = new URLSearchParams();
     if (filters?.idProyecto !== undefined && filters?.idProyecto !== null) params.append('idProyecto', String(filters.idProyecto));
     if (filters?.idProveedor !== undefined && filters?.idProveedor !== null) params.append('idProveedor', String(filters.idProveedor));
@@ -22,7 +22,7 @@ export class ValorizacionesService {
     return this.api.http.post<any>(`${this.api.baseUrl}/api/contable/valorizaciones/reglas-proveedor`, dto);
   }
 
-  valorizaciones(filters?: { idProyecto?: number | null; idProveedor?: number | null; idEspecialidad?: number | null }) {
+  valorizaciones(filters?: any) {
     const params = new URLSearchParams();
     if (filters?.idProyecto !== undefined && filters?.idProyecto !== null) params.append('idProyecto', String(filters.idProyecto));
     if (filters?.idProveedor !== undefined && filters?.idProveedor !== null) params.append('idProveedor', String(filters.idProveedor));
@@ -45,5 +45,15 @@ export class ValorizacionesService {
 
   eliminarDetalle(idDetalle: number, usuario = 'system') {
     return this.api.http.delete<any>(`${this.api.baseUrl}/api/contable/valorizaciones/detalle/${idDetalle}?usuario=${encodeURIComponent(usuario)}`);
+  }
+
+  uploadDetalleArchivos(idDetalle: number, files: File[]) {
+    const formData = new FormData();
+    files.forEach((f: File) => formData.append('files', f, f.name));
+    return this.api.http.post<any>(`${this.api.baseUrl}/api/contable/valorizaciones/detalle/${idDetalle}/archivos`, formData);
+  }
+
+  downloadDetalleArchivoUrl(idDetalle: number, idArchivo: number) {
+    return `${this.api.baseUrl}/api/contable/valorizaciones/detalle/${idDetalle}/archivos/${idArchivo}/download`;
   }
 }

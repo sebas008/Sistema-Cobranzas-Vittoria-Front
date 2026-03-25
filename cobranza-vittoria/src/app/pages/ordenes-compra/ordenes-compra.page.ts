@@ -18,7 +18,6 @@ export class OrdenesCompraPage implements OnInit {
   proveedores: any[] = [];
   proyectos: any[] = [];
   usuarios: any[] = [];
-
   detalleRq: any = null;
   detalleOc: any = null;
   msg = '';
@@ -76,6 +75,7 @@ export class OrdenesCompraPage implements OnInit {
         this.form.idRequerimiento = req?.idRequerimiento ?? null;
         this.form.idProyecto = req?.idProyecto ?? null;
         this.form.items = items.map((it: any) => ({
+          especialidad: it.especialidad || req?.especialidad || row?.especialidad || '-',
           idMaterial: it.idMaterial,
           material: it.material,
           unidadMedida: it.unidadMedida,
@@ -120,7 +120,7 @@ export class OrdenesCompraPage implements OnInit {
         idMaterial: Number(x.idMaterial),
         cantidad: Number(x.cantidad),
         idProveedor: Number(x.idProveedor || 0),
-        precioUnitario: Number(x.precioUnitario || 0)
+        precioUnitario: 0
       }))
     };
 

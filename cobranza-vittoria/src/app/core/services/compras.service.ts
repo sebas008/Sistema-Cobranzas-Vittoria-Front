@@ -5,16 +5,11 @@ import { ApiService } from './api.service';
 export class ComprasService {
   constructor(private api: ApiService) {}
 
-  // REQUERIMIENTOS
   requerimientos(filters?: any) {
     const params = new URLSearchParams();
     if (filters?.estado) params.append('estado', String(filters.estado));
-    if (filters?.idEspecialidad !== undefined && filters?.idEspecialidad !== null) {
-      params.append('idEspecialidad', String(filters.idEspecialidad));
-    }
-    if (filters?.idProyecto !== undefined && filters?.idProyecto !== null) {
-      params.append('idProyecto', String(filters.idProyecto));
-    }
+    if (filters?.idEspecialidad !== undefined && filters?.idEspecialidad !== null) params.append('idEspecialidad', String(filters.idEspecialidad));
+    if (filters?.idProyecto !== undefined && filters?.idProyecto !== null) params.append('idProyecto', String(filters.idProyecto));
     const qs = params.toString();
     return this.api.http.get<any[]>(`${this.api.baseUrl}/api/compras/requerimientos${qs ? '?' + qs : ''}`);
   }
@@ -43,16 +38,11 @@ export class ComprasService {
     });
   }
 
-  // ORDENES DE COMPRA
   ordenes(filters?: any) {
     const params = new URLSearchParams();
     if (filters?.estado) params.append('estado', String(filters.estado));
-    if (filters?.idProveedor !== undefined && filters?.idProveedor !== null) {
-      params.append('idProveedor', String(filters.idProveedor));
-    }
-    if (filters?.idProyecto !== undefined && filters?.idProyecto !== null) {
-      params.append('idProyecto', String(filters.idProyecto));
-    }
+    if (filters?.idProveedor !== undefined && filters?.idProveedor !== null) params.append('idProveedor', String(filters.idProveedor));
+    if (filters?.idProyecto !== undefined && filters?.idProyecto !== null) params.append('idProyecto', String(filters.idProyecto));
     const qs = params.toString();
     return this.api.http.get<any[]>(`${this.api.baseUrl}/api/compras/ordenes-compra${qs ? '?' + qs : ''}`);
   }
@@ -73,15 +63,10 @@ export class ComprasService {
     return this.api.http.patch<any>(`${this.api.baseUrl}/api/compras/ordenes-compra/${id}/estado`, dto);
   }
 
-  // COMPRAS
   compras(filters?: any) {
     const params = new URLSearchParams();
-    if (filters?.aceptada !== undefined && filters?.aceptada !== null) {
-      params.append('aceptada', String(filters.aceptada));
-    }
-    if (filters?.idProveedor !== undefined && filters?.idProveedor !== null) {
-      params.append('idProveedor', String(filters.idProveedor));
-    }
+    if (filters?.aceptada !== undefined && filters?.aceptada !== null) params.append('aceptada', String(filters.aceptada));
+    if (filters?.idProveedor !== undefined && filters?.idProveedor !== null) params.append('idProveedor', String(filters.idProveedor));
     const qs = params.toString();
     return this.api.http.get<any[]>(`${this.api.baseUrl}/api/compras/compras${qs ? '?' + qs : ''}`);
   }
@@ -98,10 +83,6 @@ export class ComprasService {
     return this.api.http.post<any>(`${this.api.baseUrl}/api/compras/compras`, dto);
   }
 
-  aceptarCompra(id: number) {
-    return this.api.http.post<any>(`${this.api.baseUrl}/api/compras/compras/${id}/aceptar`, {});
-  }
-
   documentosCompra(idCompra: number) {
     return this.api.http.get<any[]>(`${this.api.baseUrl}/api/compras/compras/${idCompra}/documentos`);
   }
@@ -110,5 +91,9 @@ export class ComprasService {
     const formData = new FormData();
     files.forEach((f: File) => formData.append('files', f, f.name));
     return this.api.http.post<any>(`${this.api.baseUrl}/api/compras/compras/${idCompra}/documentos`, formData);
+  }
+
+  documentoCompraDownloadUrl(idCompra: number, docId: number) {
+    return `${this.api.baseUrl}/api/compras/compras/${idCompra}/documentos/${docId}/download`;
   }
 }
