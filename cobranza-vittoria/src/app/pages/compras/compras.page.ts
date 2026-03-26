@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ComprasService } from '../../core/services/compras.service';
@@ -54,7 +54,7 @@ export class ComprasPage implements OnInit {
   modalIndex = -1;
   modalItem: PrecioItem | null = null;
 
-  constructor(private compras: ComprasService) {}
+  constructor(private compras: ComprasService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.load();
@@ -62,13 +62,13 @@ export class ComprasPage implements OnInit {
 
   load() {
     this.compras.pendientesCompra().subscribe({
-      next: (x: any) => this.pendientes = x || [],
-      error: () => this.pendientes = []
+      next: (x: any) => { this.pendientes = x || []; this.cdr.detectChanges(); },
+      error: () => { this.pendientes = []; this.cdr.detectChanges(); }
     });
 
     this.compras.compras().subscribe({
-      next: (x: any) => this.comprasCerradas = x || [],
-      error: () => this.comprasCerradas = []
+      next: (x: any) => { this.comprasCerradas = x || []; this.cdr.detectChanges(); },
+      error: () => { this.comprasCerradas = []; this.cdr.detectChanges(); }
     });
   }
 
@@ -119,11 +119,13 @@ export class ComprasPage implements OnInit {
         this.itemPrecios.forEach(x => this.recalcularItem(x));
         this.filtrosTabla = { especialidad: 'TODAS', proveedor: 'TODOS' };
         this.msg = 'OC cargada para continuar el flujo de compra.';
+        this.cdr.detectChanges();
       },
       error: () => {
         this.detalleOc = null;
         this.itemPrecios = [];
         this.msg = 'No se pudo cargar la OC pendiente.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -135,10 +137,12 @@ export class ComprasPage implements OnInit {
         this.detalleOc = null;
         this.detalleCompra = x;
         this.documentos = x?.documentos || [];
+        this.cdr.detectChanges();
       },
       error: () => {
         this.detalleCompra = null;
         this.msg = 'No se pudo cargar la compra.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -345,6 +349,7 @@ export class ComprasPage implements OnInit {
       },
       error: (e: any) => {
         this.msg = e?.error?.message || 'No se pudo registrar la compra.';
+        this.cdr.detectChanges();
       }
     });
   }

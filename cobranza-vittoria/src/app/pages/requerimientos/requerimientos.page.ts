@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ComprasService } from '../../core/services/compras.service';
@@ -71,7 +71,8 @@ export class RequerimientosPage implements OnInit {
     private compras: ComprasService,
     private maestra: MaestraService,
     private seguridad: SeguridadService,
-    private notifyService: NotificationService
+    private notifyService: NotificationService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -81,16 +82,16 @@ export class RequerimientosPage implements OnInit {
 
   load(): void {
     this.compras.requerimientos(this.filtros).subscribe({
-      next: (x: any) => this.rows = x ?? [],
-      error: () => this.rows = []
+      next: (x: any) => { this.rows = x ?? []; this.cdr.detectChanges(); },
+      error: () => { this.rows = []; this.cdr.detectChanges(); }
     });
   }
 
   loadCatalogos(): void {
-    this.maestra.especialidades(true).subscribe({ next: (x: any) => this.especialidades = x ?? [], error: () => this.especialidades = [] });
-    this.maestra.proyectos(true).subscribe({ next: (x: any) => this.proyectos = x ?? [], error: () => this.proyectos = [] });
-    this.maestra.materiales(true).subscribe({ next: (x: any) => this.materiales = x ?? [], error: () => this.materiales = [] });
-    this.seguridad.usuarios().subscribe({ next: (x: any) => this.usuarios = x ?? [], error: () => this.usuarios = [] });
+    this.maestra.especialidades(true).subscribe({ next: (x: any) => { this.especialidades = x ?? []; this.cdr.detectChanges(); }, error: () => { this.especialidades = []; this.cdr.detectChanges(); } });
+    this.maestra.proyectos(true).subscribe({ next: (x: any) => { this.proyectos = x ?? []; this.cdr.detectChanges(); }, error: () => { this.proyectos = []; this.cdr.detectChanges(); } });
+    this.maestra.materiales(true).subscribe({ next: (x: any) => { this.materiales = x ?? []; this.cdr.detectChanges(); }, error: () => { this.materiales = []; this.cdr.detectChanges(); } });
+    this.seguridad.usuarios().subscribe({ next: (x: any) => { this.usuarios = x ?? []; this.cdr.detectChanges(); }, error: () => { this.usuarios = []; this.cdr.detectChanges(); } });
   }
 
   abrirModalEspecialidades(index?: number): void {
@@ -185,11 +186,13 @@ export class RequerimientosPage implements OnInit {
         this.puedeEditarDetalle = !!x?.puedeEditar;
         const estado = (x?.requerimiento?.estado || '').toUpperCase();
         this.puedeEnviarOC = estado === 'REGISTRADO';
+        this.cdr.detectChanges();
       },
       error: () => {
         this.detalle = null;
         this.puedeEditarDetalle = false;
         this.puedeEnviarOC = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -245,6 +248,7 @@ export class RequerimientosPage implements OnInit {
       error: (e: any) => {
         this.msg = e?.error?.message || 'No se pudo enviar a orden de compra.';
         this.notifyService.show(this.msg, 'error');
+        this.cdr.detectChanges();
       }
     });
   }
@@ -323,6 +327,7 @@ export class RequerimientosPage implements OnInit {
         this.saving = false;
         this.msg = e?.error?.message || 'No se pudo guardar el requerimiento.';
         this.notifyService.show(this.msg, 'error');
+        this.cdr.detectChanges();
       }
     });
   }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { of } from 'rxjs';
@@ -34,7 +34,8 @@ export class DashboardPage implements OnInit {
     private maestra: MaestraService,
     private compras: ComprasService,
     private almacen: AlmacenService,
-    private seguridad: SeguridadService
+    private seguridad: SeguridadService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -42,44 +43,45 @@ export class DashboardPage implements OnInit {
 
     setTimeout(() => {
       this.cargando = false;
+      this.cdr.detectChanges();
     }, 1500);
   }
 
   private loadDashboard(): void {
     this.maestra.especialidades()
       .pipe(catchError(() => of([])))
-      .subscribe((x: any[]) => this.stats.especialidades = x.length);
+      .subscribe((x: any[]) => { this.stats.especialidades = x.length; this.cdr.detectChanges(); });
 
     this.maestra.proveedores()
       .pipe(catchError(() => of([])))
-      .subscribe((x: any[]) => this.stats.proveedores = x.length);
+      .subscribe((x: any[]) => { this.stats.proveedores = x.length; this.cdr.detectChanges(); });
 
     this.maestra.materiales()
       .pipe(catchError(() => of([])))
-      .subscribe((x: any[]) => this.stats.materiales = x.length);
+      .subscribe((x: any[]) => { this.stats.materiales = x.length; this.cdr.detectChanges(); });
 
     this.maestra.proyectos()
       .pipe(catchError(() => of([])))
-      .subscribe((x: any[]) => this.stats.proyectos = x.length);
+      .subscribe((x: any[]) => { this.stats.proyectos = x.length; this.cdr.detectChanges(); });
 
     this.seguridad.usuarios()
       .pipe(catchError(() => of([])))
-      .subscribe((x: any[]) => this.stats.usuarios = x.length);
+      .subscribe((x: any[]) => { this.stats.usuarios = x.length; this.cdr.detectChanges(); });
 
     this.compras.requerimientos()
       .pipe(catchError(() => of([])))
-      .subscribe((x: any[]) => this.stats.requerimientos = x.length);
+      .subscribe((x: any[]) => { this.stats.requerimientos = x.length; this.cdr.detectChanges(); });
 
     this.compras.ordenes()
       .pipe(catchError(() => of([])))
-      .subscribe((x: any[]) => this.stats.ordenes = x.length);
+      .subscribe((x: any[]) => { this.stats.ordenes = x.length; this.cdr.detectChanges(); });
 
     this.compras.compras()
       .pipe(catchError(() => of([])))
-      .subscribe((x: any[]) => this.stats.compras = x.length);
+      .subscribe((x: any[]) => { this.stats.compras = x.length; this.cdr.detectChanges(); });
 
     this.almacen.resumen()
       .pipe(catchError(() => of([])))
-      .subscribe((x: any[]) => this.stats.kardex = x.length);
+      .subscribe((x: any[]) => { this.stats.kardex = x.length; this.cdr.detectChanges(); });
   }
 }
