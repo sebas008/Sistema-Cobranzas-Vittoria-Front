@@ -1,0 +1,124 @@
+.purchase-head {
+  margin-bottom: 18px;
+}
+
+.filter-head {
+  margin-bottom: 18px;
+}
+
+.purchase-table {
+  margin-bottom: 18px;
+}
+
+.empty-row {
+  text-align: center;
+  color: var(--muted);
+  padding: 18px;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.summary-card {
+  background: linear-gradient(180deg, #ffffff 0%, #fafbff 100%);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px 20px;
+  box-shadow: 0 12px 26px rgba(31, 36, 48, 0.06);
+}
+
+.summary-card.total-card {
+  background: linear-gradient(180deg, #f8f8ff 0%, #f2f4ff 100%);
+}
+
+.summary-label {
+  color: var(--muted);
+  font-size: .92rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.summary-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.docs-panel {
+  padding: 16px;
+}
+
+.docs-title {
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+
+.docs-list {
+  display: grid;
+  gap: 10px;
+}
+
+.doc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #fafbff;
+}
+
+.doc-name {
+  overflow-wrap: anywhere;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 23, 42, .45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  z-index: 2000;
+}
+
+.modal-card {
+  width: min(780px, 100%);
+  max-height: calc(100vh - 44px);
+  overflow: auto;
+  background: #fff;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 40px rgba(16, 23, 42, .20);
+  padding: 22px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.modal-sub {
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.modal-files {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+@media (max-width: 900px) {
+  .summary-cards {
+    grid-template-columns: 1fr;
+  }
+}

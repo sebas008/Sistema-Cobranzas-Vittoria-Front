@@ -1,7 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
 import { MaestraService } from '../../core/services/maestra.service';
 import { ValorizacionesService } from '../../core/services/valorizaciones.service';
 
@@ -16,13 +15,11 @@ export class ValorizacionesPage implements OnInit {
   proyectos: any[] = [];
   proveedores: any[] = [];
   especialidades: any[] = [];
-
   configuraciones: any[] = [];
   rows: any[] = [];
   detalle: any[] = [];
   resumen: any = null;
   cabecera: any = null;
-
   filtros: any = { idProyecto: null, idProveedor: null, idEspecialidad: null };
 
   formConfiguracion: any = {
@@ -30,6 +27,7 @@ export class ValorizacionesPage implements OnInit {
     idProyecto: null,
     idProveedor: null,
     idEspecialidad: null,
+    empresa: '',
     servicio: '',
     moneda: 'PEN',
     montoCotizacion: null,
@@ -40,6 +38,7 @@ export class ValorizacionesPage implements OnInit {
     idValorizacion: null,
     idConfiguracion: null,
     periodo: '',
+    empresa: '',
     observacion: '',
     usuario: 'system'
   };
@@ -53,15 +52,14 @@ export class ValorizacionesPage implements OnInit {
     descripcion: '',
     aplicaDetraccion: false,
     aplicaGarantia: true,
-    otrosDescuentos: 0,
     fechaTransferencia: '',
-    numeroOperacion: '',
-    bancoTransferencia: '',
-    bancoDestino: '',
     montoTransferido: 0,
-    usuario: 'system'
+    otrosDescuentos: 0
   };
 
+  modalAdjuntarOpen = false;
+  modalAdjuntarDetalle: any = null;
+  modalAdjuntarFiles: File[] = [];
   msg = '';
   cargando = false;
 
@@ -77,50 +75,39 @@ export class ValorizacionesPage implements OnInit {
     this.cargarValorizaciones();
   }
 
-  get configuracionSeleccionada(): any {
-    const id = this.formValorizacion.idConfiguracion || this.cabecera?.idConfiguracion;
-    return this.configuraciones.find((x: any) => x.idConfiguracion === id) || null;
-  }
-
   get monedaActual(): string {
-    return this.cabecera?.moneda || this.configuracionSeleccionada?.moneda || this.formConfiguracion.moneda || 'PEN';
+    return this.cabecera?.moneda || this.formConfiguracion.moneda || 'PEN';
   }
 
   get porcentajeGarantiaActual(): number {
-    return Number(this.cabecera?.porcentajeGarantia ?? this.configuracionSeleccionada?.porcentajeGarantia ?? 0.05);
+    return Number(this.cabecera?.porcentajeGarantia ?? 0.04);
   }
 
   get porcentajeDetraccionActual(): number {
-    return Number(this.cabecera?.porcentajeDetraccion ?? this.configuracionSeleccionada?.porcentajeDetraccion ?? 0.04);
+    return Number(this.cabecera?.porcentajeDetraccion ?? 0.04);
   }
 
   get detraccionHabilitadaPorMonto(): boolean {
     return Number(this.formDetalle.montoFactura || 0) >= 700;
   }
 
-  get porcentajeDetraccionAplicado(): number {
-    return this.formDetalle.aplicaDetraccion && this.detraccionHabilitadaPorMonto ? this.porcentajeDetraccionActual : 0;
-  }
-
-  get porcentajeGarantiaAplicado(): number {
-    return this.formDetalle.aplicaGarantia ? this.porcentajeGarantiaActual : 0;
-  }
-
   get montoDetraccionCalculado(): number {
-    return this.redondear(Number(this.formDetalle.montoFactura || 0) * this.porcentajeDetraccionAplicado);
+    return this.formDetalle.aplicaDetraccion && this.detraccionHabilitadaPorMonto
+      ? this.redondear(Number(this.formDetalle.montoFactura || 0) * this.porcentajeDetraccionActual) : 0;
   }
 
   get montoGarantiaCalculado(): number {
-    return this.redondear(Number(this.formDetalle.montoFactura || 0) * this.porcentajeGarantiaAplicado);
+    return this.formDetalle.aplicaGarantia
+      ? this.redondear(Number(this.formDetalle.montoFactura || 0) * this.porcentajeGarantiaActual) : 0;
   }
 
   get montoAAbonarCalculado(): number {
-    return this.redondear(
-      Number(this.formDetalle.montoFactura || 0)
-      - this.montoDetraccionCalculado
-      - this.montoGarantiaCalculado
-      - Number(this.formDetalle.otrosDescuentos || 0)
-    );
+    return this.redondear(Number(this.formDetalle.montoFactura || 0) - this.montoDetraccionCalculado - this.montoGarantiaCalculado - Number(this.formDetalle.otrosDescuentos || 0));
+  }
+
+  get configuracionActiva(): any | null {
+    const id = this.formValorizacion.idConfiguracion || this.cabecera?.idConfiguracion;
+    return this.configuraciones.find(x => Number(x.idConfiguracion) === Number(id)) || null;
   }
 
   cargarCatalogos(): void {
@@ -149,34 +136,40 @@ export class ValorizacionesPage implements OnInit {
   }
 
   editarConfiguracion(row: any): void {
-    const c = this.mapConfiguracion(row);
     this.formConfiguracion = {
-      idConfiguracion: c.idConfiguracion,
-      idProyecto: c.idProyecto,
-      idProveedor: c.idProveedor,
-      idEspecialidad: c.idEspecialidad,
-      servicio: c.servicio || '',
-      moneda: c.moneda || 'PEN',
-      montoCotizacion: c.montoCotizacion,
+      idConfiguracion: row.idConfiguracion,
+      idProyecto: row.idProyecto,
+      idProveedor: row.idProveedor,
+      idEspecialidad: row.idEspecialidad,
+      empresa: row.empresa || '',
+      servicio: row.servicio || '',
+      moneda: row.moneda || 'PEN',
+      montoCotizacion: row.montoCotizacion,
       usuario: 'system'
     };
   }
 
   guardarConfiguracion(): void {
-    this.msg = '';
-    this.valorizaciones.guardarConfiguracion(this.formConfiguracion).subscribe({
+    const payload = {
+      idConfiguracion: this.toNullableNumber(this.formConfiguracion.idConfiguracion),
+      idProyecto: this.toRequiredNumber(this.formConfiguracion.idProyecto),
+      idProveedor: this.toRequiredNumber(this.formConfiguracion.idProveedor),
+      idEspecialidad: this.toRequiredNumber(this.formConfiguracion.idEspecialidad),
+      empresa: String(this.formConfiguracion.empresa || '').trim(),
+      servicio: String(this.formConfiguracion.servicio || '').trim(),
+      moneda: String(this.formConfiguracion.moneda || 'PEN').trim(),
+      montoCotizacion: Number(this.formConfiguracion.montoCotizacion || 0),
+      usuario: 'system'
+    };
+
+    if (!payload.idProyecto || !payload.idProveedor || !payload.idEspecialidad) { this.msg = 'Debes seleccionar proyecto, proveedor y especialidad.'; return; }
+    if (!payload.empresa) { this.msg = 'Debes ingresar la empresa.'; return; }
+    if (!payload.montoCotizacion || payload.montoCotizacion <= 0) { this.msg = 'Debes ingresar una cotización mayor a cero.'; return; }
+
+    this.valorizaciones.guardarConfiguracion(payload).subscribe({
       next: () => {
         this.msg = 'Configuración guardada correctamente.';
-        this.formConfiguracion = {
-          idConfiguracion: null,
-          idProyecto: null,
-          idProveedor: null,
-          idEspecialidad: null,
-          servicio: '',
-          moneda: 'PEN',
-          montoCotizacion: null,
-          usuario: 'system'
-        };
+        this.formConfiguracion = { idConfiguracion: null, idProyecto: null, idProveedor: null, idEspecialidad: null, empresa: '', servicio: '', moneda: 'PEN', montoCotizacion: null, usuario: 'system' };
         this.cargarConfiguraciones();
         this.cdr.detectChanges();
       },
@@ -184,38 +177,55 @@ export class ValorizacionesPage implements OnInit {
     });
   }
 
-  crearDesdeConfiguracion(row: any): void {
-    const c = this.mapConfiguracion(row);
+  onConfiguracionSeleccionada() {
+    const cfg = this.configuracionActiva;
+    if (!cfg) return;
+    this.formValorizacion.empresa = cfg.empresa || '';
+    this.cabecera = {
+      idConfiguracion: cfg.idConfiguracion,
+      proyecto: cfg.proyecto,
+      proveedor: cfg.proveedor,
+      especialidad: cfg.especialidad,
+      empresa: cfg.empresa,
+      servicio: cfg.servicio,
+      moneda: cfg.moneda,
+      cotizacion: cfg.montoCotizacion,
+      montoCotizacion: cfg.montoCotizacion,
+      porcentajeGarantia: cfg.porcentajeGarantia,
+      porcentajeDetraccion: cfg.porcentajeDetraccion
+    };
+  }
+
+  crearDesdeConfiguracion(row: any) {
     this.formValorizacion = {
       idValorizacion: null,
-      idConfiguracion: c.idConfiguracion,
+      idConfiguracion: row.idConfiguracion,
       periodo: this.defaultPeriodo(),
+      empresa: row.empresa || '',
       observacion: '',
       usuario: 'system'
     };
-    this.cabecera = {
-      proyecto: c.proyecto,
-      proveedor: c.proveedor,
-      especialidad: c.especialidad,
-      servicio: c.servicio,
-      moneda: c.moneda,
-      montoCotizacion: c.montoCotizacion,
-      porcentajeGarantia: c.porcentajeGarantia,
-      porcentajeDetraccion: c.porcentajeDetraccion
-    };
+    this.onConfiguracionSeleccionada();
     this.detalle = [];
     this.resumen = null;
     this.formDetalle = this.detalleVacio();
   }
 
   guardarValorizacion(): void {
-    if (!this.formValorizacion.idConfiguracion) {
-      this.msg = 'Debes seleccionar o usar una configuración.';
-      return;
-    }
+    const payload = {
+      idValorizacion: this.toNullableNumber(this.formValorizacion.idValorizacion),
+      idConfiguracion: this.toRequiredNumber(this.formValorizacion.idConfiguracion),
+      periodo: String(this.formValorizacion.periodo || '').trim(),
+      empresa: String(this.formValorizacion.empresa || '').trim(),
+      observacion: String(this.formValorizacion.observacion || '').trim(),
+      usuario: 'system'
+    };
 
-    this.msg = '';
-    this.valorizaciones.guardarValorizacion(this.formValorizacion).subscribe({
+    if (!payload.idConfiguracion) { this.msg = 'Debes seleccionar o usar una configuración.'; return; }
+    if (!payload.empresa) { this.msg = 'Debes ingresar la empresa.'; return; }
+    if (!payload.periodo) { this.msg = 'Debes ingresar el periodo.'; return; }
+
+    this.valorizaciones.guardarValorizacion(payload).subscribe({
       next: (resp: any) => {
         const idValorizacion = resp?.idValorizacion ?? resp?.IdValorizacion ?? resp?.id;
         this.msg = 'Valorización guardada correctamente.';
@@ -233,21 +243,19 @@ export class ValorizacionesPage implements OnInit {
 
   ver(idValorizacion: number): void {
     this.cargando = true;
-    this.msg = '';
     this.valorizaciones.valorizacion(idValorizacion).subscribe({
       next: (resp: any) => {
-        this.cabecera = this.mapCabecera(resp?.cabecera);
-        this.detalle = (resp?.detalle || []).map((r: any) => this.mapDetalle(r));
-        this.resumen = this.mapResumen(resp?.resumen);
-
+        this.cabecera = resp?.cabecera || null;
+        this.detalle = resp?.detalle || [];
+        this.resumen = resp?.resumen || null;
         this.formValorizacion = {
           idValorizacion: this.cabecera?.idValorizacion || idValorizacion,
           idConfiguracion: this.cabecera?.idConfiguracion || null,
           periodo: this.cabecera?.periodo || '',
+          empresa: this.cabecera?.empresa || '',
           observacion: this.cabecera?.observacion || '',
           usuario: 'system'
         };
-
         this.formDetalle = this.detalleVacio(idValorizacion);
         this.cdr.detectChanges();
       },
@@ -256,50 +264,33 @@ export class ValorizacionesPage implements OnInit {
     });
   }
 
-  editarDetalle(row: any): void {
-    const d = this.mapDetalle(row);
-    this.formDetalle = {
-      idDetalle: d.idDetalle,
-      idValorizacion: this.formValorizacion.idValorizacion,
-      fechaFactura: this.toDateInput(d.fechaFactura),
-      numeroFactura: d.numeroFactura || '',
-      montoFactura: d.montoFactura,
-      descripcion: d.descripcion || '',
-      aplicaDetraccion: Number(d.detraccion || 0) > 0,
-      aplicaGarantia: Number(d.garantia || 0) > 0,
-      otrosDescuentos: d.otrosDescuentos || 0,
-      fechaTransferencia: this.toDateInput(d.fechaTransferencia),
-      numeroOperacion: d.numeroOperacion || '',
-      bancoTransferencia: d.bancoTransferencia || '',
-      bancoDestino: d.bancoDestino || '',
-      montoTransferido: d.montoTransferido || 0,
-      usuario: 'system'
-    };
-  }
-
-  onMontoFacturaChange(): void {
-    if (!this.detraccionHabilitadaPorMonto) {
-      this.formDetalle.aplicaDetraccion = false;
-      return;
-    }
-    if (!this.formDetalle.idDetalle) {
-      this.formDetalle.aplicaDetraccion = true;
-    }
+  onDetalleMontoFacturaChange(): void {
+    if (!this.detraccionHabilitadaPorMonto) this.formDetalle.aplicaDetraccion = false;
   }
 
   guardarDetalle(): void {
-    if (!this.formValorizacion.idValorizacion) {
-      this.msg = 'Primero guarda o selecciona una valorización.';
-      return;
-    }
+    const payload = {
+      idDetalle: this.toNullableNumber(this.formDetalle.idDetalle),
+      idValorizacion: this.toRequiredNumber(this.formValorizacion.idValorizacion),
+      fechaFactura: this.formDetalle.fechaFactura || null,
+      numeroFactura: String(this.formDetalle.numeroFactura || '').trim(),
+      montoFactura: Number(this.formDetalle.montoFactura || 0),
+      descripcion: String(this.formDetalle.descripcion || '').trim(),
+      otrosDescuentos: Number(this.formDetalle.otrosDescuentos || 0),
+      fechaTransferencia: this.formDetalle.fechaTransferencia || null,
+      numeroOperacion: '',
+      bancoTransferencia: '',
+      bancoDestino: '',
+      montoTransferido: Number(this.formDetalle.montoTransferido || 0),
+      porcentajeDetraccionAplicado: this.formDetalle.aplicaDetraccion && this.detraccionHabilitadaPorMonto ? this.porcentajeDetraccionActual : 0,
+      porcentajeGarantiaAplicado: this.formDetalle.aplicaGarantia ? this.porcentajeGarantiaActual : 0,
+      usuario: 'system'
+    };
 
-    this.formDetalle.idValorizacion = this.formValorizacion.idValorizacion;
-    this.msg = '';
-    this.valorizaciones.guardarDetalle({
-      ...this.formDetalle,
-      porcentajeDetraccionAplicado: this.porcentajeDetraccionAplicado,
-      porcentajeGarantiaAplicado: this.porcentajeGarantiaAplicado
-    }).subscribe({
+    if (!payload.idValorizacion) { this.msg = 'Primero guarda o selecciona una valorización.'; return; }
+    if (!payload.montoFactura) { this.msg = 'Debes ingresar el monto de factura.'; return; }
+
+    this.valorizaciones.guardarDetalle(payload).subscribe({
       next: () => {
         this.msg = 'Detalle guardado correctamente.';
         this.ver(this.formValorizacion.idValorizacion);
@@ -309,48 +300,59 @@ export class ValorizacionesPage implements OnInit {
     });
   }
 
-  eliminarDetalle(row: any): void {
-    const idDetalle = row?.idDetalle ?? row?.IdValorizacionDetalle;
-    if (!idDetalle) return;
+  abrirAdjuntarFacturas(row: any): void {
+    this.modalAdjuntarDetalle = row;
+    this.modalAdjuntarFiles = [];
+    this.modalAdjuntarOpen = true;
+  }
 
-    this.valorizaciones.eliminarDetalle(idDetalle, 'system').subscribe({
+  cerrarAdjuntarFacturas(): void {
+    this.modalAdjuntarOpen = false;
+    this.modalAdjuntarDetalle = null;
+    this.modalAdjuntarFiles = [];
+  }
+
+  onModalArchivosSelected(event: any): void {
+    const files = Array.from(event?.target?.files || []) as File[];
+    this.modalAdjuntarFiles = files.filter((f: File) => f.name.toLowerCase().endsWith('.pdf'));
+  }
+
+  guardarAdjuntarFacturas(): void {
+    const idDetalle = this.modalAdjuntarDetalle?.idDetalle;
+    if (!idDetalle || !this.modalAdjuntarFiles.length) { this.msg = 'Debes seleccionar al menos un PDF.'; return; }
+
+    this.valorizaciones.uploadDetalleArchivos(Number(idDetalle), this.modalAdjuntarFiles).subscribe({
       next: () => {
-        this.msg = 'Detalle eliminado correctamente.';
+        this.msg = 'Facturas adjuntas correctamente.';
         if (this.formValorizacion.idValorizacion) this.ver(this.formValorizacion.idValorizacion);
         this.cdr.detectChanges();
       },
       error: e => { this.msg = e?.error?.message || 'No se pudo eliminar el detalle.'; this.cdr.detectChanges(); }
+        this.cerrarAdjuntarFacturas();
+      },
+      error: e => this.msg = e?.error?.message || 'No se pudieron adjuntar las facturas.'
     });
+  }
+
+  downloadArchivo(row: any, archivo: any): void {
+    const idDetalle = row?.idDetalle;
+    const idArchivo = archivo?.idArchivo;
+    if (!idDetalle || !idArchivo) return;
+    window.open(this.valorizaciones.downloadDetalleArchivoUrl(Number(idDetalle), Number(idArchivo)), '_blank');
+  }
+
+  formatMoney(value: any, moneda?: string): string {
+    const number = Number(value || 0);
+    const code = (moneda || this.monedaActual || 'PEN').toUpperCase() === 'USD' ? 'USD' : 'PEN';
+    return new Intl.NumberFormat('es-PE', { style: 'currency', currency: code, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(number);
   }
 
   nuevaValorizacion(): void {
     this.cabecera = null;
     this.detalle = [];
     this.resumen = null;
-    this.formValorizacion = {
-      idValorizacion: null,
-      idConfiguracion: null,
-      periodo: this.defaultPeriodo(),
-      observacion: '',
-      usuario: 'system'
-    };
+    this.formValorizacion = { idValorizacion: null, idConfiguracion: null, periodo: this.defaultPeriodo(), empresa: '', observacion: '', usuario: 'system' };
     this.formDetalle = this.detalleVacio();
-  }
-
-  formatMoney(value: any, moneda?: string): string {
-    const number = Number(value || 0);
-    const code = (moneda || this.monedaActual || 'PEN').toUpperCase() === 'USD' ? 'USD' : 'PEN';
-    return new Intl.NumberFormat('es-PE', {
-      style: 'currency',
-      currency: code,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(number);
-  }
-
-  formatPct(value: any): string {
-    const number = Number(value || 0) * 100;
-    return `${number.toFixed(2)}%`;
   }
 
   private defaultPeriodo(): string {
@@ -359,23 +361,18 @@ export class ValorizacionesPage implements OnInit {
   }
 
   private detalleVacio(idValorizacion: number | null = null): any {
-    return {
-      idDetalle: null,
-      idValorizacion,
-      fechaFactura: '',
-      numeroFactura: '',
-      montoFactura: null,
-      descripcion: '',
-      aplicaDetraccion: false,
-      aplicaGarantia: true,
-      otrosDescuentos: 0,
-      fechaTransferencia: '',
-      numeroOperacion: '',
-      bancoTransferencia: '',
-      bancoDestino: '',
-      montoTransferido: 0,
-      usuario: 'system'
-    };
+    return { idDetalle: null, idValorizacion, fechaFactura: '', numeroFactura: '', montoFactura: null, descripcion: '', aplicaDetraccion: false, aplicaGarantia: true, fechaTransferencia: '', montoTransferido: 0, otrosDescuentos: 0 };
+  }
+
+  private toNullableNumber(value: any): number | null {
+    if (value === null || value === undefined || value === '') return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  private toRequiredNumber(value: any): number {
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0 ? n : 0;
   }
 
   private redondear(value: number): number {
@@ -384,114 +381,19 @@ export class ValorizacionesPage implements OnInit {
 
   private mapConfiguracion(x: any): any {
     return {
-      idConfiguracion: x?.idConfiguracion ?? x?.idProveedorEspecialidadCotizacion ?? x?.IdProveedorEspecialidadCotizacion ?? null,
-      idProyecto: x?.idProyecto ?? x?.IdProyecto ?? null,
-      proyecto: x?.proyecto ?? x?.nombreProyecto ?? x?.NombreProyecto ?? '',
-      nombreProyecto: x?.nombreProyecto ?? x?.NombreProyecto ?? x?.proyecto ?? '',
-      idProveedor: x?.idProveedor ?? x?.IdProveedor ?? null,
-      proveedor: x?.proveedor ?? x?.razonSocial ?? x?.Proveedor ?? '',
-      razonSocial: x?.razonSocial ?? x?.Proveedor ?? x?.proveedor ?? '',
-      idEspecialidad: x?.idEspecialidad ?? x?.IdEspecialidad ?? null,
-      especialidad: x?.especialidad ?? x?.nombreEspecialidad ?? x?.Especialidad ?? '',
-      nombreEspecialidad: x?.nombreEspecialidad ?? x?.Especialidad ?? x?.especialidad ?? '',
-      servicio: x?.servicio ?? x?.Servicio ?? '',
-      moneda: x?.moneda ?? x?.Moneda ?? 'PEN',
-      montoCotizacion: Number(x?.montoCotizacion ?? x?.MontoCotizacion ?? 0),
-      porcentajeGarantia: Number(x?.porcentajeGarantia ?? x?.PorcentajeGarantia ?? 0.05),
-      porcentajeDetraccion: Number(x?.porcentajeDetraccion ?? x?.PorcentajeDetraccion ?? 0.04)
+      idConfiguracion: x?.idConfiguracion ?? x?.idProveedorEspecialidadCotizacion ?? null,
+      idProyecto: x?.idProyecto ?? null,
+      proyecto: x?.proyecto ?? x?.nombreProyecto ?? '',
+      idProveedor: x?.idProveedor ?? null,
+      proveedor: x?.proveedor ?? x?.razonSocial ?? '',
+      idEspecialidad: x?.idEspecialidad ?? null,
+      especialidad: x?.especialidad ?? x?.nombreEspecialidad ?? '',
+      empresa: x?.empresa ?? '',
+      servicio: x?.servicio ?? '',
+      moneda: x?.moneda ?? 'PEN',
+      montoCotizacion: Number(x?.montoCotizacion ?? 0),
+      porcentajeGarantia: Number(x?.porcentajeGarantia ?? 0.04),
+      porcentajeDetraccion: Number(x?.porcentajeDetraccion ?? 0.04)
     };
-  }
-
-  private mapValorizacion(x: any): any {
-    return {
-      idValorizacion: x?.idValorizacion ?? x?.IdValorizacion ?? null,
-      periodo: x?.periodo ?? x?.numeroValorizacion ?? x?.NumeroValorizacion ?? '',
-      proyecto: x?.proyecto ?? x?.nombreProyecto ?? x?.NombreProyecto ?? '',
-      nombreProyecto: x?.nombreProyecto ?? x?.NombreProyecto ?? x?.proyecto ?? '',
-      proveedor: x?.proveedor ?? x?.razonSocial ?? x?.Proveedor ?? '',
-      razonSocial: x?.razonSocial ?? x?.Proveedor ?? x?.proveedor ?? '',
-      especialidad: x?.especialidad ?? x?.nombreEspecialidad ?? x?.Especialidad ?? '',
-      nombreEspecialidad: x?.nombreEspecialidad ?? x?.Especialidad ?? x?.especialidad ?? '',
-      moneda: x?.moneda ?? x?.Moneda ?? 'PEN',
-      montoCotizacion: Number(x?.montoCotizacion ?? x?.Cotizacion ?? 0),
-      porcentajeGarantia: Number(x?.porcentajeGarantia ?? x?.PorcentajeGarantia ?? 0.05),
-      porcentajeDetraccion: Number(x?.porcentajeDetraccion ?? x?.PorcentajeDetraccion ?? 0.04),
-      facturado: Number(x?.facturado ?? x?.Facturado ?? 0),
-      transferido: Number(x?.transferido ?? x?.Transferido ?? 0),
-      garantiaRetenida: Number(x?.garantiaRetenida ?? x?.GarantiaRetenida ?? 0),
-      detraccionAcumulada: Number(x?.detraccionAcumulada ?? x?.DetraccionAcumulada ?? 0)
-    };
-  }
-
-  private mapCabecera(x: any): any {
-    if (!x) return null;
-    return {
-      idValorizacion: x?.idValorizacion ?? x?.IdValorizacion ?? null,
-      idConfiguracion: x?.idConfiguracion ?? x?.IdProveedorEspecialidadCotizacion ?? null,
-      periodo: x?.periodo ?? x?.NumeroValorizacion ?? '',
-      observacion: x?.observacion ?? x?.Observacion ?? '',
-      proyecto: x?.proyecto ?? x?.nombreProyecto ?? x?.NombreProyecto ?? '',
-      proveedor: x?.proveedor ?? x?.razonSocial ?? x?.Proveedor ?? '',
-      especialidad: x?.especialidad ?? x?.nombreEspecialidad ?? x?.Especialidad ?? '',
-      servicio: x?.servicio ?? x?.Servicio ?? '',
-      moneda: x?.moneda ?? x?.Moneda ?? 'PEN',
-      montoCotizacion: Number(x?.montoCotizacion ?? x?.Cotizacion ?? 0),
-      porcentajeGarantia: Number(x?.porcentajeGarantia ?? x?.PorcentajeGarantia ?? 0.05),
-      porcentajeDetraccion: Number(x?.porcentajeDetraccion ?? x?.PorcentajeDetraccion ?? 0.04)
-    };
-  }
-
-  private mapDetalle(x: any): any {
-    return {
-      idDetalle: x?.idDetalle ?? x?.IdValorizacionDetalle ?? null,
-      fechaFactura: x?.fechaFactura ?? x?.FechaFactura ?? null,
-      numeroFactura: x?.numeroFactura ?? x?.NumeroFactura ?? '',
-      baseImponible: Number(x?.baseImponible ?? x?.BaseImponible ?? 0),
-      igv: Number(x?.igv ?? x?.Igv ?? 0),
-      montoFactura: Number(x?.montoFactura ?? x?.MontoFactura ?? 0),
-      descripcion: x?.descripcion ?? x?.Descripcion ?? '',
-      detraccion: Number(x?.detraccion ?? x?.MontoDetraccion ?? 0),
-      garantia: Number(x?.garantia ?? x?.MontoGarantia ?? 0),
-      otrosDescuentos: Number(x?.otrosDescuentos ?? x?.OtrosDescuentos ?? 0),
-      aAbonar: Number(x?.aAbonar ?? x?.MontoAbonar ?? 0),
-      fechaTransferencia: x?.fechaTransferencia ?? x?.FechaTransferencia ?? null,
-      numeroOperacion: x?.numeroOperacion ?? x?.NumeroOperacion ?? '',
-      bancoTransferencia: x?.bancoTransferencia ?? x?.BancoTransferencia ?? '',
-      bancoDestino: x?.bancoDestino ?? x?.BancoDestino ?? '',
-      montoTransferido: Number(x?.montoTransferido ?? x?.MontoTransferido ?? 0),
-      aFavor: Number(x?.aFavor ?? x?.MontoAFavor ?? 0),
-      deuda: Number(x?.deuda ?? x?.MontoDeuda ?? 0),
-      porcentajeAvance: Number(x?.porcentajeAvance ?? x?.PorcentajeAvance ?? 0),
-      porcentajeAcumulado: Number(x?.porcentajeAcumulado ?? x?.PorcentajeAcumulado ?? 0),
-      porcentajeInicial: Number(x?.porcentajeInicial ?? x?.PorcentajeInicial ?? 0),
-      porcentajeFinal: Number(x?.porcentajeFinal ?? x?.PorcentajeFinal ?? 0)
-    };
-  }
-
-  private mapResumen(x: any): any {
-    if (!x) return null;
-    return {
-      cotizacion: Number(x?.cotizacion ?? x?.Cotizacion ?? 0),
-      porcentajeGarantia: Number(x?.porcentajeGarantia ?? x?.PorcentajeGarantia ?? 0.05),
-      porcentajeDetraccion: Number(x?.porcentajeDetraccion ?? x?.PorcentajeDetraccion ?? 0.04),
-      facturado: Number(x?.facturado ?? x?.Facturado ?? 0),
-      transferido: Number(x?.transferido ?? x?.Transferido ?? 0),
-      garantiaRetenida: Number(x?.garantiaRetenida ?? x?.GarantiaRetenida ?? x?.garantia ?? x?.Garantia ?? 0),
-      detraccionAcumulada: Number(x?.detraccionAcumulada ?? x?.DetraccionAcumulada ?? 0),
-      otrosDescuentos: Number(x?.otrosDescuentos ?? x?.OtrosDescuentos ?? 0),
-      resta: Number(x?.resta ?? x?.Resta ?? 0),
-      liquidar: Number(x?.liquidar ?? x?.Liquidar ?? 0),
-      aFavor: Number(x?.aFavor ?? x?.AFavor ?? 0),
-      deuda: Number(x?.deuda ?? x?.Deuda ?? 0)
-    };
-  }
-
-  private toDateInput(value: any): string {
-    if (!value) return '';
-    const str = String(value);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-    const d = new Date(str);
-    if (Number.isNaN(d.getTime())) return '';
-    return d.toISOString().slice(0, 10);
   }
 }
