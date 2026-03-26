@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NotificationService } from '../../core/services/notification.service';
@@ -31,16 +31,19 @@ export class MaterialesPage implements OnInit {
 
   constructor(
     private maestra: MaestraService,
-    private notifyService: NotificationService
+    private notifyService: NotificationService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
     this.maestra.especialidades(true).subscribe(x => {
       this.especialidades = x || [];
+      this.cdr.detectChanges();
     });
 
     this.maestra.unidadesMedida(true).subscribe(x => {
       this.unidadesMedida = x || [];
+      this.cdr.detectChanges();
     });
 
     this.load();
@@ -49,6 +52,7 @@ export class MaterialesPage implements OnInit {
   load() {
     this.maestra.materiales(undefined, this.filtroEspecialidad).subscribe(x => {
       this.rows = x || [];
+      this.cdr.detectChanges();
     });
   }
 
@@ -118,6 +122,7 @@ export class MaterialesPage implements OnInit {
 
         this.reset();
         this.load();
+        this.cdr.detectChanges();
       },
       error: e => {
         console.log('ERROR GUARDAR MATERIAL', e);
@@ -127,11 +132,13 @@ export class MaterialesPage implements OnInit {
         if (apiErrors) {
           const mensajes = Object.values(apiErrors).flat().join(' ');
           this.msg = mensajes || 'No se pudo guardar el material.';
+          this.cdr.detectChanges();
           return;
         }
 
         this.msg = e?.error?.message || 'No se pudo guardar el material.';
         this.notifyService.show(this.msg, 'error');
+        this.cdr.detectChanges();
       }
     });
   }

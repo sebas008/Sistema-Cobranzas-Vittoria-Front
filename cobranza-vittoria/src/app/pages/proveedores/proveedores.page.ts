@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NotificationService } from '../../core/services/notification.service';
@@ -34,7 +34,7 @@ export class ProveedoresPage implements OnInit {
     activo: true
   };
 
-  constructor(private maestra: MaestraService, private notifyService: NotificationService) {}
+  constructor(private maestra: MaestraService, private notifyService: NotificationService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     this.load();
@@ -43,6 +43,7 @@ export class ProveedoresPage implements OnInit {
   load() {
     this.maestra.proveedores().subscribe(x => {
       this.rows = x || [];
+      this.cdr.detectChanges();
     });
   }
 
@@ -67,6 +68,7 @@ export class ProveedoresPage implements OnInit {
       };
 
       this.msg = '';
+      this.cdr.detectChanges();
     });
   }
 
@@ -109,6 +111,7 @@ export class ProveedoresPage implements OnInit {
       error: e => {
         this.msg = e?.error?.message || 'No se pudo guardar el proveedor.';
         this.notifyService.show(this.msg, 'error');
+        this.cdr.detectChanges();
       }
     });
   }
