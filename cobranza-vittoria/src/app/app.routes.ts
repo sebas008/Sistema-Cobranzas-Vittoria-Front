@@ -5,6 +5,8 @@ import { ProveedoresPage } from './pages/proveedores/proveedores.page';
 import { MaterialesPage } from './pages/materiales/materiales.page';
 import { ProyectosPage } from './pages/proyectos/proyectos.page';
 import { UsuariosPage } from './pages/usuarios/usuarios.page';
+import { RolesPage } from './pages/roles/roles.page';
+import { UnidadesMedidaPage } from './pages/unidades-medida/unidades-medida.page';
 import { RequerimientosPage } from './pages/requerimientos/requerimientos.page';
 import { OrdenesCompraPage } from './pages/ordenes-compra/ordenes-compra.page';
 import { ComprasPage } from './pages/compras/compras.page';
@@ -25,6 +27,8 @@ export const routes: Routes = [
   { path: 'materiales', canActivate: [authGuard], component: MaterialesPage },
   { path: 'proyectos', canActivate: [authGuard], component: ProyectosPage },
   { path: 'usuarios', canActivate: [authGuard], component: UsuariosPage },
+  { path: 'roles', canActivate: [authGuard], component: RolesPage },
+  { path: 'unidades-medida', canActivate: [authGuard], component: UnidadesMedidaPage },
   { path: 'requerimientos', canActivate: [authGuard], component: RequerimientosPage },
   { path: 'ordenes-compra', canActivate: [authGuard], component: OrdenesCompraPage },
   { path: 'compras', canActivate: [authGuard], component: ComprasPage },

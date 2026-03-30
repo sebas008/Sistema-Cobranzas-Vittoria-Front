@@ -83,4 +83,10 @@ export class MaestraService {
     const qs = activo === undefined || activo === null ? '' : `?activo=${activo}`;
     return this.api.http.get<any[]>(`${this.api.baseUrl}/api/maestra/unidades-medida${qs}`);
   }
+
+  guardarUnidadMedida(dto: any) {
+    return dto.idUnidadMedida
+      ? this.api.http.put<any>(`${this.api.baseUrl}/api/maestra/unidades-medida/${dto.idUnidadMedida}`, dto)
+      : this.api.http.post<any>(`${this.api.baseUrl}/api/maestra/unidades-medida`, dto);
+  }
 }

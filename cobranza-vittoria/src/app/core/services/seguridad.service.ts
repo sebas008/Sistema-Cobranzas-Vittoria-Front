@@ -5,7 +5,16 @@ import { ApiService } from './api.service';
 export class SeguridadService {
   constructor(private api: ApiService) {}
 
-  roles() { return this.api.http.get<any[]>(`${this.api.baseUrl}/api/seguridad/roles`); }
+  roles(activo?: boolean | null) {
+    const qs = activo === undefined || activo === null ? '' : `?activo=${activo}`;
+    return this.api.http.get<any[]>(`${this.api.baseUrl}/api/seguridad/roles${qs}`);
+  }
+
+  guardarRol(dto: any) {
+    return dto.idRol
+      ? this.api.http.put<any>(`${this.api.baseUrl}/api/seguridad/roles/${dto.idRol}`, dto)
+      : this.api.http.post<any>(`${this.api.baseUrl}/api/seguridad/roles`, dto);
+  }
   usuarios(activo?: boolean | null) {
     const qs = activo === undefined || activo === null ? '' : `?activo=${activo}`;
     return this.api.http.get<any[]>(`${this.api.baseUrl}/api/seguridad/usuarios${qs}`);
