@@ -15,6 +15,7 @@ import { ValorizacionesPage } from './pages/valorizaciones/valorizaciones.page';
 import { CategoriasGastoPage } from './pages/categorias-gasto/categorias-gasto.page';
 import { ProveedoresGastoPage } from './pages/proveedores-gasto/proveedores-gasto.page';
 import { GastosAdministrativosPage } from './pages/gastos-administrativos/gastos-administrativos.page';
+import { ResumenTotalPage } from './pages/resumen-total/resumen-total.page';
 import { LoginPage } from './pages/login/login.page';
 import { authGuard } from './core/guards/auth.guard';
 
@@ -22,6 +23,7 @@ export const routes: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
   { path: 'login', component: LoginPage },
   { path: 'dashboard', component: DashboardPage, canActivate: [authGuard] },
+  { path: 'resumen-total', canActivate: [authGuard], component: ResumenTotalPage },
   { path: 'especialidades', canActivate: [authGuard], component: EspecialidadesPage },
   { path: 'proveedores', canActivate: [authGuard], component: ProveedoresPage },
   { path: 'materiales', canActivate: [authGuard], component: MaterialesPage },
