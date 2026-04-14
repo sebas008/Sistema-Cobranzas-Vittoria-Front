@@ -431,12 +431,18 @@ tbody tr:last-child td {
   .page-header {
     flex-direction: column;
   }
+  .page-header .btn {
+    width: 100%;
+  }
   .panel {
     padding: 18px;
   }
   th,
   td {
     padding: 12px 14px;
+  }
+  .table-wrap {
+    max-width: calc(100vw - 32px);
   }
   .actions {
     flex-wrap: wrap;

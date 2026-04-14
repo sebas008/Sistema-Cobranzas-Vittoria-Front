@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { Subscription, forkJoin, of } from 'rxjs';
 import { catchError, filter, finalize, timeout } from 'rxjs/operators';
 import { ComprasService } from '../../core/services/compras.service';
@@ -54,6 +54,7 @@ export class DashboardPage implements OnInit, OnDestroy {
     private comprasService: ComprasService,
     private valorizacionesService: ValorizacionesService,
     private router: Router,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -105,10 +106,12 @@ export class DashboardPage implements OnInit, OnDestroy {
 
         if (!compraIds.length) {
           this.clearMaterialStats();
+          this.cdr.detectChanges();
           return;
         }
 
         this.loadingMaterials = true;
+        this.cdr.detectChanges();
         forkJoin(
           compraIds.map(id =>
             this.comprasService.compra(id).pipe(
@@ -117,7 +120,12 @@ export class DashboardPage implements OnInit, OnDestroy {
             )
           )
         )
-          .pipe(finalize(() => { if (version === this.loadVersion) this.loadingMaterials = false; }))
+          .pipe(finalize(() => { 
+            if (version === this.loadVersion) {
+              this.loadingMaterials = false;
+              this.cdr.detectChanges();
+            }
+          }))
           .subscribe({
             next: detalleCompras => {
               if (version !== this.loadVersion) return;
@@ -150,6 +158,7 @@ export class DashboardPage implements OnInit, OnDestroy {
         this.cards = this.cards.map(card => ({ ...card, value: 0 }));
         this.clearMaterialStats();
         this.hasData = false;
+        this.cdr.detectChanges();
       }
     });
   }
