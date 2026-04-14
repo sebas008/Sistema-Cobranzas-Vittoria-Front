@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, inject } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { NotificationComponent } from './shared/components/notification/notification.component';
@@ -14,6 +14,7 @@ import { AuthService } from './core/services/auth.service';
 export class App {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   sidebarCollapsed = false;
   mobileMenuOpen = false;
@@ -61,20 +62,23 @@ export class App {
     } else {
       this.sidebarCollapsed = false;
     }
+    this.cdr.detectChanges();
   }
 
   toggleSidebar(): void {
     if (this.isLoginRoute()) return;
     if (typeof window !== 'undefined' && window.innerWidth <= 980) {
       this.mobileMenuOpen = !this.mobileMenuOpen;
-      return;
+    } else {
+      this.sidebarCollapsed = !this.sidebarCollapsed;
     }
-    this.sidebarCollapsed = !this.sidebarCollapsed;
+    this.cdr.detectChanges();
   }
 
   closeMobileMenu(): void {
     if (typeof window !== 'undefined' && window.innerWidth <= 980) {
       this.mobileMenuOpen = false;
+      this.cdr.detectChanges();
     }
   }
 
