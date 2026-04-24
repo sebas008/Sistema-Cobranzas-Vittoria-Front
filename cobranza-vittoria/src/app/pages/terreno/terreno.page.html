@@ -1,7 +1,7 @@
 <div class="page-header">
   <div>
-    <div class="page-title">Terreno</div>
-    <div class="page-subtitle">Registro base del concepto y monto asociado al terreno por proyecto.</div>
+    <div class="page-title">Terreno - Anteproyecto - Proyecto</div>
+    <div class="page-subtitle">Registro base por concepto y monto asociado al proyecto.</div>
   </div>
 </div>
 
@@ -9,7 +9,7 @@
   <section class="panel">
     <div class="panel-title">Listado</div>
 
-    <div *ngIf="!rows.length" class="empty-state">No hay registros de terreno.</div>
+    <div *ngIf="!rows.length" class="empty-state">No hay registros.</div>
 
     <div *ngIf="rows.length" class="table-wrap table-wrap--sticky-actions">
       <table>
@@ -17,9 +17,6 @@
           <tr>
             <th>Fecha emisión</th>
             <th>Proyecto</th>
-            <th>Proveedor</th>
-            <th>Actividad</th>
-            <th>Tipo de actividad</th>
             <th>Concepto</th>
             <th>Moneda</th>
             <th>Monto</th>
@@ -32,9 +29,6 @@
           <tr *ngFor="let row of rows">
             <td>{{ row.fechaEmision | date:'dd/MM/yyyy' }}</td>
             <td>{{ row.nombreProyecto }}</td>
-            <td>{{ row.proveedor }}</td>
-            <td>{{ row.actividad }}</td>
-            <td>{{ row.tipoActividad }}</td>
             <td>{{ row.concepto }}</td>
             <td>{{ row.moneda }}</td>
             <td>{{ row.monto | number:'1.2-2' }}</td>
@@ -58,7 +52,7 @@
     <div class="form-grid two">
       <div class="field">
         <label>Fecha emisión</label>
-        <input type="date" [(ngModel)]="form.fechaEmision" readonly>
+        <input type="date" [(ngModel)]="form.fechaEmision">
       </div>
       <div class="field">
         <label>Estado</label>
@@ -75,30 +69,19 @@
         </select>
       </div>
       <div class="field">
-        <label>Proveedor</label>
-        <select [(ngModel)]="form.idProveedorGastoAdministrativo">
-          <option [ngValue]="null">Seleccionar</option>
-          <option *ngFor="let p of proveedoresGasto" [ngValue]="p.idProveedorGastoAdministrativo">{{ p.nombre || p.razonSocial || p.descripcion }}</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Actividad</label>
-        <input [(ngModel)]="form.actividad" placeholder="Ingresar actividad" />
-      </div>
-      <div class="field">
-        <label>Tipo de actividad</label>
-        <input [(ngModel)]="form.tipoActividad" placeholder="Ingresar tipo de actividad" />
-      </div>
-      <div class="field">
         <label>Moneda</label>
         <select [(ngModel)]="form.moneda">
           <option value="PEN">PEN</option>
           <option value="USD">USD</option>
         </select>
       </div>
+      <div class="field" style="grid-column: 1 / -1;">
+        <label>Concepto</label>
+        <input [(ngModel)]="form.concepto" placeholder="Ingresar concepto" />
+      </div>
       <div class="field">
-        <label>Total</label>
-        <input type="number" min="0" step="0.01" [(ngModel)]="form.total" placeholder="0.00" />
+        <label>Monto</label>
+        <input type="number" min="0" step="0.01" [(ngModel)]="form.monto" placeholder="0.00" />
       </div>
       <div class="field" style="grid-column: 1 / -1;">
         <label>Descripción</label>
@@ -106,11 +89,11 @@
       </div>
     </div>
 
-    <div class="toolbar" style="margin-top: 14px;">
-      <button class="btn btn-primary" (click)="guardar()">{{ editandoId ? 'Actualizar registro' : 'Guardar registro' }}</button>
+    <div class="toolbar top-gap">
+      <button class="btn btn-primary" (click)="guardar()">{{ editandoId ? 'Actualizar' : 'Guardar' }}</button>
       <button class="btn btn-ghost" (click)="limpiar()">Limpiar</button>
     </div>
 
-    <div *ngIf="msg" class="empty-state" style="margin-top:14px; padding:14px;">{{ msg }}</div>
+    <div *ngIf="msg" class="success-box top-gap">{{ msg }}</div>
   </section>
 </div>

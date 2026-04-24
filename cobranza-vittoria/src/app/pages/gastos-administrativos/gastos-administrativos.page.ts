@@ -20,8 +20,7 @@ export class GastosAdministrativosPage implements OnInit {
 
   filtros: any = {
     idCategoriaGasto: '',
-    idProveedorGastoAdministrativo: '',
-    activo: 'true'
+    idProveedorGastoAdministrativo: ''
   };
 
   form: any = this.createEmptyForm();
@@ -144,11 +143,9 @@ export class GastosAdministrativosPage implements OnInit {
 
   load(): void {
     this.loading = true;
-    const activo = this.filtros.activo === '' ? null : this.filtros.activo === 'true';
     this.gastosService.gastos({
       idCategoriaGasto: this.filtros.idCategoriaGasto || null,
-      idProveedorGastoAdministrativo: this.filtros.idProveedorGastoAdministrativo || null,
-      activo
+      idProveedorGastoAdministrativo: this.filtros.idProveedorGastoAdministrativo || null
     }).subscribe({
       next: rows => {
         this.rows = rows ?? [];

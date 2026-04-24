@@ -9,7 +9,6 @@ type PresupuestoItem = {
   concepto: string;
   soles: number | null;
   dolares: number | null;
-  incidencia: number | null;
 };
 
 @Component({
@@ -82,13 +81,17 @@ export class PresupuestoPage implements OnInit {
     this.form.items = this.conceptosFijos.map((concepto: string) => ({
       concepto,
       soles: null,
-      dolares: null,
-      incidencia: null
+      dolares: null
     }));
+    this.recalcularDependientes();
   }
 
   esTerreno(item: PresupuestoItem): boolean {
     return String(item?.concepto || '').trim().toUpperCase() === 'TERRENO';
+  }
+
+  esAlcabala(item: PresupuestoItem): boolean {
+    return String(item?.concepto || '').trim().toUpperCase() === 'ALCABALA';
   }
 
   onDolaresChange(item: PresupuestoItem): void {
@@ -98,6 +101,25 @@ export class PresupuestoPage implements OnInit {
     }
     const dolares = this.toNumber(item.dolares);
     item.soles = this.round(dolares * this.tipoCambio);
+    this.recalcularDependientes();
+  }
+
+  onSolesChange(item: PresupuestoItem): void {
+    if (this.esTerreno(item) && this.toNumber(item.dolares) > 0) {
+      item.soles = this.round(this.toNumber(item.dolares) * this.tipoCambio);
+    }
+    this.recalcularDependientes();
+  }
+
+  private recalcularDependientes(): void {
+    const terreno = this.form.items.find((x: PresupuestoItem) => this.esTerreno(x));
+    const alcabala = this.form.items.find((x: PresupuestoItem) => this.esAlcabala(x));
+    const terrenoSoles = terreno ? this.toNumber(terreno.soles) : 0;
+
+    if (alcabala) {
+      alcabala.soles = this.round(terrenoSoles * 0.03);
+      alcabala.dolares = 0;
+    }
   }
 
   guardarConfiguracion(): void {
@@ -106,18 +128,28 @@ export class PresupuestoPage implements OnInit {
       return;
     }
 
+    this.recalcularDependientes();
+
     const items = (this.form.items || []).map((x: PresupuestoItem, index: number) => {
       const concepto = this.conceptosFijos[index] || String(x.concepto || '').trim();
-      const dolares = this.esTerreno(x) ? this.toNumber(x.dolares) : 0;
-      const soles = this.esTerreno(x) && dolares > 0
-        ? this.round(dolares * this.tipoCambio)
-        : this.toNumber(x.soles);
+      const esTerreno = this.esTerreno(x);
+      const esAlcabala = this.esAlcabala(x);
+      const dolares = esTerreno ? this.toNumber(x.dolares) : 0;
+      let soles = this.toNumber(x.soles);
+
+      if (esTerreno && dolares > 0) {
+        soles = this.round(dolares * this.tipoCambio);
+      }
+
+      if (esAlcabala) {
+        const terreno = this.form.items.find((it: PresupuestoItem) => this.esTerreno(it));
+        soles = this.round(this.toNumber(terreno?.soles) * 0.03);
+      }
 
       return {
         concepto,
         soles,
-        dolares,
-        incidencia: this.toNumber(x.incidencia)
+        dolares
       };
     });
 
@@ -151,14 +183,14 @@ export class PresupuestoPage implements OnInit {
           return {
             concepto,
             soles: found ? this.toNumber(found.soles) : null,
-            dolares: found ? this.toNumber(found.dolares) : null,
-            incidencia: found ? this.toNumber(found.incidencia) : null
+            dolares: found ? this.toNumber(found.dolares) : null
           } as PresupuestoItem;
         });
 
         this.form.items = items.map((x: PresupuestoItem) => ({ ...x }));
+        this.recalcularDependientes();
 
-        const totalPresupuesto = this.round(items.reduce((acc: number, item: PresupuestoItem) => acc + this.toNumber(item.soles), 0));
+        const totalPresupuesto = this.round(this.form.items.reduce((acc: number, item: PresupuestoItem) => acc + this.toNumber(item.soles), 0));
 
         this.comprasService.compras().subscribe({
           next: (compras: any[]) => {
@@ -182,7 +214,7 @@ export class PresupuestoPage implements OnInit {
               saldo,
               porcentajeConsumido,
               porcentajeDisponible,
-              items
+              items: this.form.items.map((x: PresupuestoItem) => ({ ...x }))
             };
             this.cdr.detectChanges();
           },
@@ -195,7 +227,7 @@ export class PresupuestoPage implements OnInit {
               saldo,
               porcentajeConsumido: 0,
               porcentajeDisponible: totalPresupuesto > 0 ? 100 : 0,
-              items
+              items: this.form.items.map((x: PresupuestoItem) => ({ ...x }))
             };
             this.cdr.detectChanges();
           }
@@ -209,6 +241,7 @@ export class PresupuestoPage implements OnInit {
   }
 
   totalItemsFormulario(): number {
+    this.recalcularDependientes();
     return this.round((this.form.items || []).reduce((acc: number, item: PresupuestoItem) => acc + this.toNumber(item.soles), 0));
   }
 

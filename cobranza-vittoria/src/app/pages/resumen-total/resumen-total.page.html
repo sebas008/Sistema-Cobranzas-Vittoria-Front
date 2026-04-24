@@ -1,7 +1,7 @@
 <div class="page-header">
   <div>
     <div class="page-title">Resumen Total</div>
-    <div class="page-subtitle">Vista consolidada de compras, gastos administrativos y valorizaciones por especialidad.</div>
+    <div class="page-subtitle">Resumen consolidado por tablas de materiales, valorizaciones, gastos y totales generales.</div>
   </div>
   <div class="toolbar">
     <button class="btn btn-secondary" (click)="load()">Actualizar</button>
@@ -12,75 +12,64 @@
 <div class="empty-state" *ngIf="!loading && msg">{{ msg }}</div>
 
 <div class="kpi-grid" *ngIf="!loading">
-  <div class="kpi-card kpi-card--accent">
-    <div class="kpi-label">Compras</div>
-    <div class="kpi-value">{{ formatMoney(totalCompras) }}</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Gastos administrativos</div>
-    <div class="kpi-value">{{ formatMoney(totalGastosAdministrativos) }}</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Valorizado</div>
-    <div class="kpi-value">{{ formatMoney(totalValorizacionesFacturadas) }}</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Transferido</div>
-    <div class="kpi-value">{{ formatMoney(totalValorizacionesTransferidas) }}</div>
-  </div>
-  <div class="kpi-card">
-    <div class="kpi-label">Pendiente de valorización</div>
-    <div class="kpi-value">{{ formatMoney(totalValorizacionesPendientes) }}</div>
-  </div>
-  <div class="kpi-card kpi-card--dark">
-    <div class="kpi-label">Total gestionado</div>
-    <div class="kpi-value">{{ formatMoney(totalGeneral) }}</div>
-  </div>
+  <div class="kpi-card"><div class="kpi-label">Materiales</div><div class="kpi-value">{{ formatMoney(totalMateriales) }}</div></div>
+  <div class="kpi-card"><div class="kpi-label">Valorizaciones</div><div class="kpi-value">{{ formatMoney(totalValorizaciones) }}</div></div>
+  <div class="kpi-card"><div class="kpi-label">Gastos</div><div class="kpi-value">{{ formatMoney(totalGastos) }}</div></div>
+  <div class="kpi-card"><div class="kpi-label">Terreno</div><div class="kpi-value">{{ formatMoney(totalTerreno) }}</div></div>
+  <div class="kpi-card"><div class="kpi-label">Alcabala</div><div class="kpi-value">{{ formatMoney(totalAlcabala) }}</div></div>
+  <div class="kpi-card kpi-card--dark"><div class="kpi-label">Total general</div><div class="kpi-value">{{ formatMoney(totalGeneral) }}</div></div>
 </div>
 
 <section class="panel top-gap" *ngIf="!loading">
-  <div class="panel-title">Resumen por especialidad</div>
-  <div class="helper-strip">Ordenado de la menos compleja a la más compleja según la secuencia de especialidades registrada en mantenimiento.</div>
-
-  <div class="table-wrap top-gap" *ngIf="resumenPorEspecialidad.length; else emptyResumen">
+  <div class="panel-title">Tabla 1. Compras / Materiales</div>
+  <div class="table-wrap top-gap" *ngIf="comprasRows.length; else emptyCompras">
     <table>
-      <thead>
-        <tr>
-          <th>Especialidad</th>
-          <th class="table-number">Compras</th>
-          <th class="table-number">Gastos administrativos</th>
-          <th class="table-number">Valorizado</th>
-          <th class="table-number">Transferido</th>
-          <th class="table-number">Pendiente</th>
-          <th class="table-number">Total gestionado</th>
-        </tr>
-      </thead>
+      <thead><tr><th>Especialidad</th><th class="table-number">Cotización</th><th class="table-number">Facturado</th><th class="table-number">Saldo</th></tr></thead>
       <tbody>
-        <tr *ngFor="let row of resumenPorEspecialidad">
+        <tr *ngFor="let row of comprasRows">
           <td>{{ row.especialidad }}</td>
-          <td class="table-number">{{ formatMoney(row.compras) }}</td>
-          <td class="table-number">{{ formatMoney(row.gastosAdministrativos) }}</td>
-          <td class="table-number">{{ formatMoney(row.valorizacionesFacturadas) }}</td>
-          <td class="table-number">{{ formatMoney(row.valorizacionesTransferidas) }}</td>
-          <td class="table-number">{{ formatMoney(row.valorizacionesPendientes) }}</td>
-          <td class="table-number total-col">{{ formatMoney(row.totalGestionado) }}</td>
+          <td class="table-number">{{ formatMoney(row.cotizacion) }}</td>
+          <td class="table-number">{{ formatMoney(row.facturado) }}</td>
+          <td class="table-number">{{ formatMoney(row.saldo) }}</td>
         </tr>
       </tbody>
-      <tfoot>
-        <tr>
-          <th>Total general</th>
-          <th class="table-number">{{ formatMoney(totalCompras) }}</th>
-          <th class="table-number">{{ formatMoney(totalGastosAdministrativos) }}</th>
-          <th class="table-number">{{ formatMoney(totalValorizacionesFacturadas) }}</th>
-          <th class="table-number">{{ formatMoney(totalValorizacionesTransferidas) }}</th>
-          <th class="table-number">{{ formatMoney(totalValorizacionesPendientes) }}</th>
-          <th class="table-number total-col">{{ formatMoney(totalGeneral) }}</th>
-        </tr>
-      </tfoot>
     </table>
   </div>
+  <ng-template #emptyCompras><div class="empty-state">No hay datos de compras para mostrar.</div></ng-template>
+</section>
 
-  <ng-template #emptyResumen>
-    <div class="empty-state">No hay datos suficientes para construir el resumen total.</div>
-  </ng-template>
+<section class="panel top-gap" *ngIf="!loading">
+  <div class="panel-title">Tabla 2. Valorizaciones</div>
+  <div class="table-wrap top-gap" *ngIf="valorizacionesRows.length; else emptyVals">
+    <table>
+      <thead><tr><th>Especialidad</th><th class="table-number">Cotización</th><th class="table-number">Garantía</th><th class="table-number">Transferido</th><th class="table-number">Facturado</th><th class="table-number">Saldo pendiente</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let row of valorizacionesRows">
+          <td>{{ row.especialidad }}</td>
+          <td class="table-number">{{ formatMoney(row.cotizacion) }}</td>
+          <td class="table-number">{{ formatMoney(row.garantia) }}</td>
+          <td class="table-number">{{ formatMoney(row.transferido) }}</td>
+          <td class="table-number">{{ formatMoney(row.facturado) }}</td>
+          <td class="table-number">{{ formatMoney(row.saldo) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <ng-template #emptyVals><div class="empty-state">No hay datos de valorizaciones para mostrar.</div></ng-template>
+</section>
+
+<section class="panel top-gap" *ngIf="!loading">
+  <div class="panel-title">Tabla 3. Gastos administrativos</div>
+  <div class="table-wrap top-gap" *ngIf="gastosRows.length; else emptyGastos">
+    <table>
+      <thead><tr><th>Categoría</th><th class="table-number">Facturado</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let row of gastosRows">
+          <td>{{ row.categoria }}</td>
+          <td class="table-number">{{ formatMoney(row.facturado) }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <ng-template #emptyGastos><div class="empty-state">No hay datos de gastos para mostrar.</div></ng-template>
 </section>

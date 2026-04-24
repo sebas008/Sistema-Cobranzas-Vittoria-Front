@@ -10,7 +10,7 @@
     <div class="presupuesto-step__badge">1</div>
     <div>
       <div class="panel-title">Configuración inicial</div>
-      <div class="page-subtitle presupuesto-subtitle">Selecciona el proyecto y registra los montos. Solo TERRENO maneja dólares y convierte a soles con TC 3.41.</div>
+      <div class="page-subtitle presupuesto-subtitle">Selecciona el proyecto y registra los montos. Solo TERRENO maneja dólares, convierte a soles con TC 3.41 y ALCABALA se calcula como 3% de TERRENO.</div>
     </div>
   </div>
 
@@ -36,15 +36,19 @@
             <th>Concepto</th>
             <th>Soles</th>
             <th>Dólares</th>
-            <th>Incidencia</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let item of form.items">
             <td class="presupuesto-concepto">{{ item.concepto }}</td>
-            <td><input type="number" min="0" step="0.01" [(ngModel)]="item.soles" [readonly]="esTerreno(item) && (item.dolares || 0) > 0" placeholder="0.00"></td>
-            <td><input type="number" min="0" step="0.01" [(ngModel)]="item.dolares" (ngModelChange)="onDolaresChange(item)" [disabled]="!esTerreno(item)" placeholder="0.00"></td>
-            <td><input type="number" min="0" step="0.01" [(ngModel)]="item.incidencia" placeholder="0.00"></td>
+            <td>
+              <input type="number" min="0" step="0.01" [(ngModel)]="item.soles" (ngModelChange)="onSolesChange(item)"
+                     [readonly]="esAlcabala(item) || (esTerreno(item) && (item.dolares || 0) > 0)" placeholder="0.00">
+            </td>
+            <td>
+              <input type="number" min="0" step="0.01" [(ngModel)]="item.dolares" (ngModelChange)="onDolaresChange(item)"
+                     [disabled]="!esTerreno(item)" placeholder="0.00">
+            </td>
           </tr>
         </tbody>
       </table>
@@ -109,7 +113,6 @@
             <th>Concepto</th>
             <th>Soles</th>
             <th>Dólares</th>
-            <th>Incidencia</th>
           </tr>
         </thead>
         <tbody>
@@ -117,7 +120,6 @@
             <td class="presupuesto-concepto">{{ item.concepto }}</td>
             <td>S/ {{ item.soles | number:'1.2-2' }}</td>
             <td>$ {{ item.dolares | number:'1.2-2' }}</td>
-            <td>{{ item.incidencia | number:'1.2-2' }}</td>
           </tr>
         </tbody>
       </table>
