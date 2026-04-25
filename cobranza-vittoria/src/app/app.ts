@@ -3,11 +3,12 @@ import { ChangeDetectorRef, Component, HostListener, inject } from '@angular/cor
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { NotificationComponent } from './shared/components/notification/notification.component';
+import { TipoCambioComponent } from './shared/components/tipo-cambio/tipo-cambio.component';
 import { AuthService } from './core/services/auth.service';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, NotificationComponent],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, NotificationComponent, TipoCambioComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
