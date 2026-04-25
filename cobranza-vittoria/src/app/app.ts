@@ -55,6 +55,10 @@ export class App {
     return this.auth.isAuthenticated();
   }
 
+  get isPresupuestoRoute(): boolean {
+    return (this.currentUrl || '').startsWith('/presupuesto');
+  }
+
   @HostListener('window:resize')
   onResize(): void {
     if (typeof window === 'undefined') return;
