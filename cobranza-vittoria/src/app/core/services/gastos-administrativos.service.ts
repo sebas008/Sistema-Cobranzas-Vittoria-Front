@@ -44,9 +44,11 @@ export class GastosAdministrativosService {
 
   gastos(filters?: any) {
     const params = new URLSearchParams();
+    const idProyecto = filters?.idProyecto ?? filters?.IdProyecto;
     const idCategoria = filters?.idCategoriaGasto ?? filters?.IdCategoriaGasto;
     const idProveedor = filters?.idProveedorGastoAdministrativo ?? filters?.IdProveedorGastoAdministrativo;
     const activo = filters?.activo ?? filters?.Activo;
+    if (idProyecto !== undefined && idProyecto !== null && idProyecto !== '') params.set('idProyecto', String(idProyecto));
     if (idCategoria !== undefined && idCategoria !== null && idCategoria !== '') params.set('idCategoriaGasto', String(idCategoria));
     if (idProveedor !== undefined && idProveedor !== null && idProveedor !== '') params.set('idProveedorGastoAdministrativo', String(idProveedor));
     if (activo !== undefined && activo !== null && activo !== '') params.set('activo', String(activo));

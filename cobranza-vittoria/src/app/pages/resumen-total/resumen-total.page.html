@@ -1,12 +1,25 @@
+
 <div class="page-header">
   <div>
     <div class="page-title">Resumen Total</div>
-    <div class="page-subtitle">Resumen consolidado de cotización general, materiales, valorizaciones, gastos y montos registrados en Terreno / Alcabala.</div>
+    <div class="page-subtitle">Consulta el consolidado por proyecto. La cotización general, materiales, valorizaciones, gastos y montos de Terreno / Alcabala se recalculan según el proyecto seleccionado.</div>
   </div>
   <div class="toolbar resumen-toolbar">
     <button class="btn btn-secondary" (click)="load()">Actualizar</button>
   </div>
 </div>
+
+<section class="panel resumen-filter-panel" *ngIf="!loading">
+  <div class="form-grid one">
+    <div class="field">
+      <label>Proyecto</label>
+      <select [(ngModel)]="selectedProjectId" (ngModelChange)="onProjectChange()">
+        <option [ngValue]="null">Seleccionar</option>
+        <option *ngFor="let p of proyectos" [ngValue]="p.idProyecto">{{ p.nombreProyecto }}</option>
+      </select>
+    </div>
+  </div>
+</section>
 
 <div class="dashboard-status" *ngIf="loading">Cargando resumen total...</div>
 <div class="empty-state" *ngIf="!loading && msg">{{ msg }}</div>
@@ -15,7 +28,7 @@
   <div class="hero-resumen__main">
     <span class="hero-resumen__eyebrow">Consolidado general</span>
     <h2>{{ formatMoney(cotizacionGeneral) }}</h2>
-    <p>La cotización general se toma desde el módulo de proyectos. El saldo ahora se calcula como cotización general menos el total ejecutado.</p>
+    <p>La cotización general, el total general y el saldo se calculan solo con la información del proyecto seleccionado.</p>
   </div>
   <div class="hero-resumen__stats">
     <div>
@@ -45,30 +58,7 @@
 </div>
 
 <section class="panel top-gap" *ngIf="!loading">
-  <div class="panel-title">Cotización general por proyecto</div>
-  <div class="table-wrap top-gap" *ngIf="proyectosRows.length; else emptyProyectos">
-    <table>
-      <thead>
-        <tr>
-          <th>Proyecto</th>
-          <th class="table-number">Cotización general</th>
-          <th>Estado</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let row of proyectosRows">
-          <td>{{ row.proyecto }}</td>
-          <td class="table-number">{{ formatMoney(row.cotizacionGeneral) }}</td>
-          <td>{{ row.estado }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <ng-template #emptyProyectos><div class="empty-state">No hay cotizaciones de proyectos para mostrar.</div></ng-template>
-</section>
-
-<section class="panel top-gap" *ngIf="!loading">
-  <div class="panel-title">Tabla 1. Compras / Materiales</div>
+  <div class="panel-title">Compras / Materiales</div>
   <div class="table-wrap top-gap" *ngIf="comprasRows.length; else emptyCompras">
     <table>
       <thead><tr><th>Especialidad</th><th class="table-number">Cotización</th><th class="table-number">Facturado</th><th class="table-number">Saldo</th></tr></thead>
@@ -82,11 +72,11 @@
       </tbody>
     </table>
   </div>
-  <ng-template #emptyCompras><div class="empty-state">No hay datos de compras para mostrar.</div></ng-template>
+  <ng-template #emptyCompras><div class="empty-state">No hay compras registradas para el proyecto seleccionado.</div></ng-template>
 </section>
 
 <section class="panel top-gap" *ngIf="!loading">
-  <div class="panel-title">Tabla 2. Valorizaciones</div>
+  <div class="panel-title">Valorizaciones</div>
   <div class="table-wrap top-gap" *ngIf="valorizacionesRows.length; else emptyVals">
     <table>
       <thead><tr><th>Especialidad</th><th class="table-number">Cotización</th><th class="table-number">Garantía</th><th class="table-number">Transferido</th><th class="table-number">Facturado</th><th class="table-number">Saldo pendiente</th></tr></thead>
@@ -102,11 +92,11 @@
       </tbody>
     </table>
   </div>
-  <ng-template #emptyVals><div class="empty-state">No hay datos de valorizaciones para mostrar.</div></ng-template>
+  <ng-template #emptyVals><div class="empty-state">No hay valorizaciones registradas para el proyecto seleccionado.</div></ng-template>
 </section>
 
 <section class="panel top-gap" *ngIf="!loading">
-  <div class="panel-title">Tabla 3. Gastos administrativos</div>
+  <div class="panel-title">Gastos administrativos</div>
   <div class="table-wrap top-gap" *ngIf="gastosRows.length; else emptyGastos">
     <table>
       <thead><tr><th>Categoría</th><th class="table-number">Facturado</th></tr></thead>
@@ -118,5 +108,5 @@
       </tbody>
     </table>
   </div>
-  <ng-template #emptyGastos><div class="empty-state">No hay datos de gastos para mostrar.</div></ng-template>
+  <ng-template #emptyGastos><div class="empty-state">No hay gastos administrativos registrados para el proyecto seleccionado.</div></ng-template>
 </section>

@@ -1,3 +1,4 @@
+
 <div class="page-header">
   <div>
     <div class="page-title">Presupuesto</div>
@@ -10,7 +11,7 @@
     <div class="presupuesto-step__badge">1</div>
     <div>
       <div class="panel-title">Configuración inicial</div>
-      <div class="page-subtitle presupuesto-subtitle">Selecciona el proyecto y registra los montos. Solo TERRENO maneja dólares, convierte a soles con TC {{ tipoCambioActual | number:'1.2-2' }} y ALCABALA se calcula como 3% de TERRENO.</div>
+      <div class="page-subtitle presupuesto-subtitle">Selecciona el proyecto y registra los montos. TERRENO, ALCABALA, PROYECTO y ANTEPROYECTO se toman del módulo Terreno según el proyecto seleccionado.</div>
     </div>
   </div>
 
@@ -18,7 +19,7 @@
     <div class="form-grid two">
       <div class="field">
         <label>Proyecto</label>
-        <select [(ngModel)]="form.idProyecto" (ngModelChange)="cargarVisualizacion()">
+        <select [(ngModel)]="form.idProyecto" (ngModelChange)="onProyectoChange()">
           <option [ngValue]="null">Seleccionar</option>
           <option *ngFor="let p of proyectos" [ngValue]="p.idProyecto">{{ p.nombreProyecto }}</option>
         </select>
@@ -43,11 +44,11 @@
             <td class="presupuesto-concepto">{{ item.concepto }}</td>
             <td>
               <input type="number" min="0" step="0.01" [(ngModel)]="item.soles" (ngModelChange)="onSolesChange(item)"
-                     [readonly]="esSoloLectura(item) || (esTerreno(item) && (item.dolares || 0) > 0)" placeholder="0.00">
+                     [readonly]="esSoloLectura(item)" placeholder="0.00">
             </td>
             <td>
               <input type="number" min="0" step="0.01" [(ngModel)]="item.dolares" (ngModelChange)="onDolaresChange(item)"
-                     [disabled]="!esTerreno(item) || esSoloLectura(item)" placeholder="0.00">
+                     [readonly]="!esTerreno(item)" placeholder="0.00">
             </td>
           </tr>
         </tbody>

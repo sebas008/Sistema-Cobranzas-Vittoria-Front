@@ -30,6 +30,15 @@
 
     <div class="filters compact-filters">
       <div class="field">
+        <label>Proyecto</label>
+        <select [(ngModel)]="filtros.idProyecto" (change)="load()">
+          <option value="">Todos</option>
+          <option *ngFor="let p of proyectos" [ngValue]="p.idProyecto">{{ p.nombreProyecto }}</option>
+        </select>
+      </div>
+
+
+      <div class="field">
         <label>Categoría</label>
         <select [(ngModel)]="filtros.idCategoriaGasto" (change)="onCategoriaFiltroChange()">
           <option value="">Todas</option>
@@ -54,6 +63,7 @@
         <thead>
           <tr>
             <th>Fecha</th>
+            <th>Proyecto</th>
             <th>Categoría</th>
             <th>Proveedor</th>
             <th>Monto</th>
@@ -66,6 +76,7 @@
         <tbody>
           <tr *ngFor="let row of rows">
             <td>{{ readValue(row, 'fecha', 'Fecha') | date:'dd/MM/yyyy' }}</td>
+            <td>{{ readValue(row, 'proyecto', 'Proyecto', 'nombreProyecto', 'NombreProyecto') || '-' }}</td>
             <td>{{ readValue(row, 'categoria', 'Categoria') || '-' }}</td>
             <td>{{ readValue(row, 'proveedor', 'Proveedor') || '-' }}</td>
             <td class="table-number">{{ (readValue(row, 'monto', 'Monto') || 0) | number:'1.2-2' }}</td>
@@ -102,6 +113,14 @@
         <select [(ngModel)]="form.moneda">
           <option value="PEN">PEN</option>
           <option value="USD">USD</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Proyecto</label>
+        <select [(ngModel)]="form.idProyecto">
+          <option [ngValue]="null">Seleccionar</option>
+          <option *ngFor="let p of proyectos" [ngValue]="p.idProyecto">{{ p.nombreProyecto }}</option>
         </select>
       </div>
 

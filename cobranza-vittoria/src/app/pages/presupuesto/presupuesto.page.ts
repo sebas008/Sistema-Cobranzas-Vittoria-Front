@@ -1,3 +1,4 @@
+
 import { Component, ChangeDetectorRef, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
@@ -73,22 +74,19 @@ export class PresupuestoPage implements OnInit {
     this.sunatService.tipoCambio$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((data) => {
-        const sell_price = this.toNumber(data?.sell_price);
-        if (sell_price <= 0) return;
-
-        this.tipoCambioActual = sell_price;
+        const sellPrice = this.toNumber(data?.sell_price);
+        if (sellPrice <= 0) return;
+        this.tipoCambioActual = sellPrice;
 
         const terreno = this.form.items.find((x: PresupuestoItem) => this.esTerreno(x));
         if (terreno && this.toNumber(terreno.dolares) > 0) {
           terreno.soles = this.round(this.toNumber(terreno.dolares) * this.tipoCambioActual);
-          this.cargarMontosDesdeTerreno();
-    this.recalcularDependientes();
+          this.recalcularDependientes();
         }
         this.cdr.detectChanges();
       });
     this.sunatService.loadTipoCambio();
 
-    this.cargarMontosDesdeTerreno();
     this.maestra.proyectos(true).subscribe({
       next: (rows: any[]) => {
         this.proyectos = rows || [];
@@ -110,12 +108,29 @@ export class PresupuestoPage implements OnInit {
     this.recalcularDependientes();
   }
 
+  onProyectoChange(): void {
+    this.cargarVisualizacion();
+  }
+
   esTerreno(item: PresupuestoItem): boolean {
     return String(item?.concepto || '').trim().toUpperCase() === 'TERRENO';
   }
 
   esAlcabala(item: PresupuestoItem): boolean {
     return String(item?.concepto || '').trim().toUpperCase() === 'ALCABALA';
+  }
+
+  esProyecto(item: PresupuestoItem): boolean {
+    return String(item?.concepto || '').trim().toUpperCase() === 'PROYECTO';
+  }
+
+  esAnteproyecto(item: PresupuestoItem): boolean {
+    return String(item?.concepto || '').trim().toUpperCase() === 'ANTEPROYECTO';
+  }
+
+  esSoloLectura(item: PresupuestoItem): boolean {
+    const c = String(item?.concepto || '').trim().toUpperCase();
+    return ['TERRENO', 'ALCABALA', 'PROYECTO', 'ANTEPROYECTO'].includes(c);
   }
 
   onDolaresChange(item: PresupuestoItem): void {
@@ -129,9 +144,7 @@ export class PresupuestoPage implements OnInit {
   }
 
   onSolesChange(item: PresupuestoItem): void {
-    if (this.esTerreno(item) && this.toNumber(item.dolares) > 0) {
-      item.soles = this.round(this.toNumber(item.dolares) * this.tipoCambioActual);
-    }
+    if (this.esSoloLectura(item)) return;
     this.recalcularDependientes();
   }
 
@@ -146,25 +159,68 @@ export class PresupuestoPage implements OnInit {
     }
   }
 
-
-  esSoloLectura(item: PresupuestoItem): boolean {
-    const c = String(item?.concepto || '').trim().toUpperCase();
-    return ['TERRENO', 'ALCABALA', 'PROYECTO', 'ANTEPROYECTO'].includes(c);
-  }
-
-  private cargarMontosDesdeTerreno(): void {
+  private cargarMontosDesdeTerreno(idProyecto: number): void {
     try {
-      const raw = localStorage.getItem('vittoria-terrenos-v4') || '[]';
+      const raw =
+        localStorage.getItem('vittoria-terrenos-v4') ||
+        localStorage.getItem('vittoria-terrenos-v3') ||
+        localStorage.getItem('vittoria-terrenos-v2') ||
+        '[]';
+
       const rows = JSON.parse(raw) as any[];
-      const sumByConcept = (concepto: string) => rows
-        .filter((x: any) => String(x.concepto || '').trim().toUpperCase() === concepto)
-        .reduce((acc: number, x: any) => acc + this.toNumber(x.montoSoles ?? x.monto ?? 0), 0);
-      for (const item of this.form.items) {
-        const c = String(item.concepto || '').trim().toUpperCase();
-        if (['TERRENO','ALCABALA','PROYECTO','ANTEPROYECTO'].includes(c)) {
-          item.soles = this.round(sumByConcept(c));
-          item.dolares = c === 'TERRENO' ? this.round(this.toNumber(item.soles) / this.tipoCambioActual) : 0;
-        }
+      const filtrados = rows.filter((x: any) => Number(x.idProyecto || 0) === idProyecto);
+
+      const sumarSoles = (concepto: string): number =>
+        this.round(
+          filtrados
+            .filter((x: any) => String(x.concepto || '').trim().toUpperCase() === concepto)
+            .reduce((acc: number, x: any) => {
+              const montoSoles = this.toNumber(x.montoSoles ?? 0);
+              if (montoSoles > 0) return acc + montoSoles;
+
+              const monto = this.toNumber(x.monto ?? 0);
+              const moneda = String(x.moneda || '').trim().toUpperCase();
+              if (moneda === 'USD') {
+                return acc + this.round(monto * this.toNumber(x.tipoCambio || this.tipoCambioActual));
+              }
+              return acc + monto;
+            }, 0)
+        );
+
+      const sumarDolares = (concepto: string): number =>
+        this.round(
+          filtrados
+            .filter((x: any) => String(x.concepto || '').trim().toUpperCase() === concepto)
+            .reduce((acc: number, x: any) => {
+              const montoDolares = this.toNumber(x.montoDolares ?? 0);
+              if (montoDolares > 0) return acc + montoDolares;
+
+              const monto = this.toNumber(x.monto ?? 0);
+              const moneda = String(x.moneda || '').trim().toUpperCase();
+              return moneda === 'USD' ? acc + monto : acc;
+            }, 0)
+        );
+
+      const terreno = this.form.items.find((x: PresupuestoItem) => this.esTerreno(x));
+      const alcabala = this.form.items.find((x: PresupuestoItem) => this.esAlcabala(x));
+      const proyecto = this.form.items.find((x: PresupuestoItem) => this.esProyecto(x));
+      const anteproyecto = this.form.items.find((x: PresupuestoItem) => this.esAnteproyecto(x));
+
+      if (terreno) {
+        terreno.soles = sumarSoles('TERRENO');
+        terreno.dolares = sumarDolares('TERRENO');
+      }
+      if (proyecto) {
+        proyecto.soles = sumarSoles('PROYECTO');
+        proyecto.dolares = 0;
+      }
+      if (anteproyecto) {
+        anteproyecto.soles = sumarSoles('ANTEPROYECTO');
+        anteproyecto.dolares = 0;
+      }
+      if (alcabala) {
+        alcabala.soles = this.round(this.toNumber(terreno?.soles) * 0.03);
+        alcabala.dolares = 0;
       }
     } catch {}
   }
@@ -187,17 +243,12 @@ export class PresupuestoPage implements OnInit {
       if (esTerreno && dolares > 0) {
         soles = this.round(dolares * this.tipoCambioActual);
       }
-
       if (esAlcabala) {
         const terreno = this.form.items.find((it: PresupuestoItem) => this.esTerreno(it));
         soles = this.round(this.toNumber(terreno?.soles) * 0.03);
       }
 
-      return {
-        concepto,
-        soles,
-        dolares
-      };
+      return { concepto, soles, dolares };
     });
 
     this.presupuestoService.guardar({ idProyecto: Number(this.form.idProyecto), items }).subscribe({
@@ -215,7 +266,13 @@ export class PresupuestoPage implements OnInit {
   cargarVisualizacion(): void {
     if (!this.form.idProyecto) {
       this.visualizacion = {
-        proyecto: '', totalPresupuesto: 0, totalCompras: 0, saldo: 0, porcentajeConsumido: 0, porcentajeDisponible: 100, items: []
+        proyecto: '',
+        totalPresupuesto: 0,
+        totalCompras: 0,
+        saldo: 0,
+        porcentajeConsumido: 0,
+        porcentajeDisponible: 100,
+        items: []
       };
       this.resetItems();
       this.cdr.detectChanges();
@@ -235,7 +292,7 @@ export class PresupuestoPage implements OnInit {
         });
 
         this.form.items = items.map((x: PresupuestoItem) => ({ ...x }));
-        this.cargarMontosDesdeTerreno();
+        this.cargarMontosDesdeTerreno(Number(this.form.idProyecto));
         this.recalcularDependientes();
 
         const totalPresupuesto = this.round(this.form.items.reduce((acc: number, item: PresupuestoItem) => acc + this.toNumber(item.soles), 0));

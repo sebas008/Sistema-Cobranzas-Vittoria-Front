@@ -3,6 +3,7 @@ import { CommonModule, DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GastosAdministrativosService } from '../../core/services/gastos-administrativos.service';
 import { NotificationService } from '../../core/services/notification.service';
+import { MaestraService } from '../../core/services/maestra.service';
 
 @Component({
   standalone: true,
@@ -15,10 +16,12 @@ export class GastosAdministrativosPage implements OnInit {
   rows: any[] = [];
   categorias: any[] = [];
   proveedores: any[] = [];
+  proyectos: any[] = [];
   documentos: any[] = [];
   loading = false;
 
   filtros: any = {
+    idProyecto: '',
     idCategoriaGasto: '',
     idProveedorGastoAdministrativo: ''
   };
@@ -30,6 +33,7 @@ export class GastosAdministrativosPage implements OnInit {
 
   constructor(
     private gastosService: GastosAdministrativosService,
+    private maestraService: MaestraService,
     private notifications: NotificationService,
     private cdr: ChangeDetectorRef
   ) {}
@@ -43,6 +47,7 @@ export class GastosAdministrativosPage implements OnInit {
     return {
       idGastoAdministrativo: null,
       fecha: this.todayForInput(),
+      idProyecto: null,
       idCategoriaGasto: null,
       idProveedorGastoAdministrativo: null,
       monto: null,
@@ -118,6 +123,17 @@ export class GastosAdministrativosPage implements OnInit {
   }
 
   loadCatalogos(): void {
+    this.maestraService.proyectos(true).subscribe({
+      next: rows => {
+        this.proyectos = rows ?? [];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.proyectos = [];
+        this.cdr.detectChanges();
+      }
+    });
+
     this.gastosService.categorias(true).subscribe({
       next: rows => {
         this.categorias = rows ?? [];
@@ -144,6 +160,7 @@ export class GastosAdministrativosPage implements OnInit {
   load(): void {
     this.loading = true;
     this.gastosService.gastos({
+      idProyecto: this.filtros.idProyecto || null,
       idCategoriaGasto: this.filtros.idCategoriaGasto || null,
       idProveedorGastoAdministrativo: this.filtros.idProveedorGastoAdministrativo || null
     }).subscribe({
@@ -171,6 +188,7 @@ export class GastosAdministrativosPage implements OnInit {
         this.form = {
           idGastoAdministrativo: this.readValue(gasto, 'idGastoAdministrativo', 'IdGastoAdministrativo'),
           fecha: this.normalizeDateInput(this.readValue(gasto, 'fecha', 'Fecha')),
+          idProyecto: Number(this.readValue(gasto, 'idProyecto', 'IdProyecto')) || null,
           idCategoriaGasto: Number(this.readValue(gasto, 'idCategoriaGasto', 'IdCategoriaGasto')) || null,
           idProveedorGastoAdministrativo: Number(this.readValue(gasto, 'idProveedorGastoAdministrativo', 'IdProveedorGastoAdministrativo')) || null,
           monto: Number(this.readValue(gasto, 'monto', 'Monto')) || null,
@@ -209,6 +227,10 @@ export class GastosAdministrativosPage implements OnInit {
   }
 
   save(): void {
+    if (!this.form.idProyecto) {
+      this.notifications.show('Selecciona un proyecto.', 'info');
+      return;
+    }
     if (!this.form.idCategoriaGasto) {
       this.notifications.show('Selecciona una categoría.', 'info');
       return;
@@ -224,6 +246,7 @@ export class GastosAdministrativosPage implements OnInit {
 
     const payload = {
       idGastoAdministrativo: this.form.idGastoAdministrativo,
+      idProyecto: Number(this.form.idProyecto),
       idCategoriaGasto: Number(this.form.idCategoriaGasto),
       idProveedorGastoAdministrativo: Number(this.form.idProveedorGastoAdministrativo),
       fecha: this.form.fecha,
