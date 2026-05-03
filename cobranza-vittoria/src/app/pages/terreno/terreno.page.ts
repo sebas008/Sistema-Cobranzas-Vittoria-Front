@@ -8,6 +8,7 @@ import { SunatService } from '../../core/services/sunat.service';
 type TerrenoItem = {
   idTerreno: number;
   fechaEmision: string;
+  fechaTipoCambio: string;
   idProyecto: number | null;
   nombreProyecto: string;
   concepto: string;
@@ -38,6 +39,7 @@ export class TerrenoPage implements OnInit {
 
   form = {
     fechaEmision: this.todayIso(),
+    fechaTipoCambio: this.todayIso(),
     idProyecto: null as number | null,
     concepto: '',
     montoSoles: null as number | null,
@@ -60,16 +62,16 @@ export class TerrenoPage implements OnInit {
         const sellPrice = this.toNumber(data?.sell_price);
         if (sellPrice > 0) {
           this.tipoCambioActual = sellPrice;
-          if (!this.editandoId) {
-            this.form.tipoCambio = sellPrice;
-          }
+          this.form.tipoCambio = sellPrice;
+          const fechaApi = this.normalizarFechaInput(data?.date);
+          if (fechaApi) this.form.fechaTipoCambio = fechaApi;
           if (this.toNumber(this.form.montoDolares) > 0) {
             this.onDolaresInput();
           }
         }
         this.cdr.detectChanges();
       });
-    this.sunatService.loadTipoCambio();
+    this.sunatService.consultarTipoCambio();
 
     this.maestra.proyectos(true).subscribe({
       next: (rows: any[]) => { this.proyectos = rows || []; this.cdr.detectChanges(); },
@@ -87,6 +89,7 @@ export class TerrenoPage implements OnInit {
     const payload: TerrenoItem = {
       idTerreno: this.editandoId || this.nextId(),
       fechaEmision: this.form.fechaEmision || this.todayIso(),
+      fechaTipoCambio: this.normalizarFechaInput(this.form.fechaTipoCambio) || this.todayIso(),
       idProyecto: Number(this.form.idProyecto),
       nombreProyecto: proyecto?.nombreProyecto || '-',
       concepto: String(this.form.concepto || '').trim(),
@@ -111,6 +114,7 @@ export class TerrenoPage implements OnInit {
     this.editandoId = row.idTerreno;
     this.form = {
       fechaEmision: row.fechaEmision || this.todayIso(),
+      fechaTipoCambio: this.normalizarFechaInput(row.fechaTipoCambio) || this.todayIso(),
       idProyecto: row.idProyecto,
       concepto: row.concepto,
       montoSoles: row.montoSoles,
@@ -125,6 +129,12 @@ export class TerrenoPage implements OnInit {
     row.estado = row.estado === 'Activo' ? 'Inactivo' : 'Activo';
     this.persistir();
     this.msg = `Registro ${row.estado === 'Activo' ? 'activado' : 'desactivado'} correctamente.`;
+  }
+
+  onFechaTipoCambioChange(fecha: string): void {
+    const fechaNormalizada = this.normalizarFechaInput(fecha);
+    this.form.fechaTipoCambio = fechaNormalizada;
+    this.sunatService.consultarTipoCambio(fechaNormalizada || undefined);
   }
 
   onDolaresInput(): void {
@@ -152,6 +162,7 @@ export class TerrenoPage implements OnInit {
     this.editandoId = null;
     this.form = {
       fechaEmision: this.todayIso(),
+      fechaTipoCambio: this.todayIso(),
       idProyecto: null,
       concepto: '',
       montoSoles: null,
@@ -170,6 +181,15 @@ export class TerrenoPage implements OnInit {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(this.toNumber(value));
+  }
+
+  formatFecha(fecha: string | null | undefined): string {
+    if (!fecha) return '--/--/----';
+    const base = fecha.split('T')[0];
+    const partes = base.split('-');
+    if (partes.length !== 3) return fecha;
+    const [year, month, day] = partes;
+    return `${day}/${month}/${year}`;
   }
 
   totalRegistrado(): number {
@@ -213,6 +233,7 @@ export class TerrenoPage implements OnInit {
     return {
       idTerreno: Number(row?.idTerreno || 0),
       fechaEmision: row?.fechaEmision || this.todayIso(),
+      fechaTipoCambio: this.normalizarFechaInput(row?.fechaTipoCambio || row?.fechaEmision) || this.todayIso(),
       idProyecto: row?.idProyecto != null ? Number(row.idProyecto) : null,
       nombreProyecto: row?.nombreProyecto || '-',
       concepto: String(row?.concepto || '').trim(),
@@ -237,6 +258,13 @@ export class TerrenoPage implements OnInit {
     const date = new Date();
     const offset = date.getTimezoneOffset();
     return new Date(date.getTime() - offset * 60000).toISOString().slice(0, 10);
+  }
+
+  private normalizarFechaInput(fecha: string | null | undefined): string {
+    if (!fecha) return '';
+    const base = fecha.split('T')[0];
+    const partes = base.split('-');
+    return partes.length === 3 ? base : '';
   }
 
   private toNumber(value: any): number {
