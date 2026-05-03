@@ -81,11 +81,11 @@ export class PresupuestoPage implements OnInit {
         const terreno = this.form.items.find((x: PresupuestoItem) => this.esTerreno(x));
         if (terreno && this.toNumber(terreno.dolares) > 0) {
           terreno.soles = this.round(this.toNumber(terreno.dolares) * this.tipoCambioActual);
-          this.recalcularDependientes();
         }
+        this.recalcularDependientes();
         this.cdr.detectChanges();
       });
-    this.sunatService.loadTipoCambio();
+    this.sunatService.consultarTipoCambio();
 
     this.maestra.proyectos(true).subscribe({
       next: (rows: any[]) => {

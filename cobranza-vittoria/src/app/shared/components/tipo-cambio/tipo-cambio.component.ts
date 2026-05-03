@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SunatService } from '../../../core/services/sunat.service';
 
 @Component({
@@ -11,19 +12,42 @@ import { SunatService } from '../../../core/services/sunat.service';
 })
 export class TipoCambioComponent implements OnInit {
   private readonly sunatService = inject(SunatService);
+  private readonly destroyRef = inject(DestroyRef);
   readonly tipoCambio$ = this.sunatService.tipoCambio$;
+  fechaSeleccionada = '';
 
   ngOnInit(): void {
-    this.sunatService.loadTipoCambio();
+    this.tipoCambio$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((tipoCambio) => {
+        const fecha = this.normalizarFechaInput(tipoCambio?.date);
+        if (fecha) this.fechaSeleccionada = fecha;
+      });
+
+    this.sunatService.consultarTipoCambio();
+  }
+
+  onFechaChange(fecha: string): void {
+    const fechaNormalizada = this.normalizarFechaInput(fecha);
+    this.fechaSeleccionada = fechaNormalizada;
+    this.sunatService.consultarTipoCambio(fechaNormalizada || undefined);
   }
 
   formatFecha(fecha: string | null | undefined): string {
     if (!fecha) return '--/--/----';
-    const date = new Date(fecha);
-    if (Number.isNaN(date.getTime())) return fecha;
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
+
+    const fechaBase = fecha.split('T')[0];
+    const partes = fechaBase.split('-');
+    if (partes.length !== 3) return fecha;
+
+    const [year, month, day] = partes;
     return `${day}/${month}/${year}`;
+  }
+
+  private normalizarFechaInput(fecha: string | null | undefined): string {
+    if (!fecha) return '';
+    const fechaBase = fecha.split('T')[0];
+    const partes = fechaBase.split('-');
+    return partes.length === 3 ? fechaBase : '';
   }
 }
