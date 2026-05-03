@@ -39,6 +39,7 @@
             <th>Proyecto</th>
             <th>Concepto</th>
             <th class="table-number">Dólares</th>
+            <th>Fecha TC</th>
             <th class="table-number">TC</th>
             <th class="table-number">Soles</th>
             <th>Estado</th>
@@ -51,6 +52,7 @@
             <td class="terreno-table__project">{{ row.nombreProyecto }}</td>
             <td>{{ row.concepto }}</td>
             <td class="table-number">{{ formatMoney(row.montoDolares, 'USD') }}</td>
+            <td>{{ formatFecha(row.fechaTipoCambio) }}</td>
             <td class="table-number">{{ row.tipoCambio | number:'1.2-2' }}</td>
             <td class="table-number terreno-table__money">{{ formatMoney(row.montoSoles) }}</td>
             <td>
@@ -106,6 +108,10 @@
       <div class="field">
         <label>Monto en dólares</label>
         <input type="number" min="0" step="0.01" [(ngModel)]="form.montoDolares" (ngModelChange)="onDolaresInput()" placeholder="0.00" />
+      </div>
+      <div class="field">
+        <label>Fecha Tipo Cambio</label>
+        <input type="date" [(ngModel)]="form.fechaTipoCambio" (ngModelChange)="onFechaTipoCambioChange($event)" />
       </div>
       <div class="field">
         <label>Tipo de cambio</label>
