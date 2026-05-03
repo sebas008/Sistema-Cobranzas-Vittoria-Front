@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { HttpParams } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { TipoCambioResponse } from '../../models/tipo-cambio.models';
@@ -13,13 +14,13 @@ export class SunatService {
 
   constructor(private api: ApiService) {}
 
-  loadTipoCambio(force = false): void {
+  consultarTipoCambio(fecha?: string): void {
     if (this.isLoading) return;
-    if (!force && this.tipoCambioSubject.value) return;
 
     this.isLoading = true;
+    const params = fecha ? new HttpParams().set('fecha', fecha) : undefined;
     this.api.http
-      .get<TipoCambioResponse>(`${this.api.baseUrl}/api/tipo-cambio`)
+      .get<TipoCambioResponse>(`${this.api.baseUrl}/api/tipo-cambio`, { params })
       .pipe(finalize(() => (this.isLoading = false)))
       .subscribe({
         next: (response: TipoCambioResponse) => {
@@ -29,6 +30,11 @@ export class SunatService {
           this.tipoCambioSubject.next(this.tipoCambioSubject.value);
         }
       });
+  }
+
+  loadTipoCambio(force = false): void {
+    if (!force && this.tipoCambioSubject.value) return;
+    this.consultarTipoCambio();
   }
 
   get current(): TipoCambioResponse | null {
